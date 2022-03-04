@@ -1,3 +1,6 @@
 [submodule "thirdparty/libzt"]
 	path = thirdparty/libzt
 	url = https://github.com/zerotier/libzt.git
+[submodule "thirdparty/ztcpp"]
+	path = thirdparty/ztcpp
+	url = https://github.com/joshuadahlunr/ztcpp.git
