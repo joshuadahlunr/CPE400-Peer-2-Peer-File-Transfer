@@ -5,23 +5,22 @@ find_package(Boost)
 add_subdirectory("thirdparty/libzt")
 
 set(CMAKE_BUILD_TYPE Debug)
-set(CXX_STANDARD 20)
+set(CXX_STANDARD 17)
 
 set(thirdparty "thirdparty/")
 set(ztcpppath "${thirdparty}/ztcpp/ZTCpp/")
 
 # Build c++ wrapper around zeroteir
-set(ZTCPP_LIBRARY_NAME "ztcpp")
 add_compile_definitions("ZTCPP_EXPORT")
-add_library(${ZTCPP_LIBRARY_NAME} "${ztcpppath}Source/Events.cpp" "${ztcpppath}Source/Ip_address.cpp" "${ztcpppath}Source/Service.cpp" "${ztcpppath}Source/Sockaddr_util.cpp" "${ztcpppath}Source/Socket.cpp")
-target_include_directories(${ZTCPP_LIBRARY_NAME} PUBLIC "${ztcpppath}Include/" "${thirdparty}libzt/include")
-target_link_libraries(${ZTCPP_LIBRARY_NAME} PRIVATE zt-static)
+add_library(ztcpp "${ztcpppath}Source/Events.cpp" "${ztcpppath}Source/Ip_address.cpp" "${ztcpppath}Source/Service.cpp" "${ztcpppath}Source/Sockaddr_util.cpp" "${ztcpppath}Source/Socket.cpp")
+target_include_directories(ztcpp PUBLIC "${ztcpppath}Include/" "${thirdparty}libzt/include")
+target_link_libraries(ztcpp PUBLIC zt-static)
 
 file(GLOB sources "src/*.cpp" "src/*.c")
 file(GLOB clientSources "src/client/*.cpp" "src/client/*.c")
 file(GLOB serverSources "src/server/*.cpp" "src/server/*.c")
 set(includes "src/" "src/client" "src/server" ${Boost_INCLUDE_DIRS} "${ztcpppath}Include/" "${thirdparty}libzt/include")
-set(libraries ${ZTCPP_LIBRARY_NAME})
+set(libraries ztcpp)
 
 message("${STATIC_LIB_NAME}")
 
