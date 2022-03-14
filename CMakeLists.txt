@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(ztpinger LANGUAGES C CXX)
+project(WhisperNetTransferSystem LANGUAGES C CXX)
 
 find_package(Boost)
 add_subdirectory("thirdparty/libzt")
@@ -17,17 +17,11 @@ target_include_directories(ztcpp PUBLIC "${ztcpppath}Include/" "${thirdparty}lib
 target_link_libraries(ztcpp PUBLIC zt-static)
 
 file(GLOB sources "src/*.cpp" "src/*.c")
-file(GLOB clientSources "src/client/*.cpp" "src/client/*.c")
-file(GLOB serverSources "src/server/*.cpp" "src/server/*.c")
-set(includes "src/" "src/client" "src/server" ${Boost_INCLUDE_DIRS} "${ztcpppath}Include/" "${thirdparty}libzt/include")
+set(includes "src/" "src/client" "src/server" ${Boost_INCLUDE_DIRS} "${thirdparty}" "${ztcpppath}Include/" "${thirdparty}libzt/include")
 set(libraries ztcpp)
 
 message("${STATIC_LIB_NAME}")
 
-add_executable (ztclient ${sources} ${clientSources})
-target_include_directories (ztclient PUBLIC ${includes})
-target_link_libraries (ztclient LINK_PUBLIC ${libraries})
-
-add_executable (ztserver ${sources} ${serverSources})
-target_include_directories (ztserver PUBLIC ${includes})
-target_link_libraries (ztserver LINK_PUBLIC ${libraries})
+add_executable (wnts ${sources} ${clientSources})
+target_include_directories (wnts PUBLIC ${includes})
+target_link_libraries (wnts LINK_PUBLIC ${libraries})

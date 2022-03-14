@@ -8,9 +8,7 @@
 #include <iostream>
 #include <cstring>
 
-#include <ZTCpp.hpp>
-
-namespace zt = jbatnozic::ztcpp;
+#include "include_everywhere_last.hpp"
 
 class NodeInfo {
 public:
