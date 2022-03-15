@@ -4,3 +4,6 @@
 [submodule "thirdparty/ztcpp"]
 	path = thirdparty/ztcpp
 	url = https://github.com/joshuadahlunr/ztcpp.git
+[submodule "thirdparty/Argos"]
+	path = thirdparty/Argos
+	url = https://github.com/jebreimo/Argos.git

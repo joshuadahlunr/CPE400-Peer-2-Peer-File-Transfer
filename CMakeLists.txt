@@ -16,11 +16,12 @@ add_library(ztcpp "${ztcpppath}Source/Events.cpp" "${ztcpppath}Source/Ip_address
 target_include_directories(ztcpp PUBLIC "${ztcpppath}Include/" "${thirdparty}libzt/include")
 target_link_libraries(ztcpp PUBLIC zt-static)
 
+# Command line parser
+add_subdirectory("${thirdparty}Argos")
+
 file(GLOB sources "src/*.cpp" "src/*.c")
 set(includes "src/" "src/client" "src/server" ${Boost_INCLUDE_DIRS} "${thirdparty}" "${ztcpppath}Include/" "${thirdparty}libzt/include")
-set(libraries ztcpp)
-
-message("${STATIC_LIB_NAME}")
+set(libraries ztcpp Argos)
 
 add_executable (wnts ${sources} ${clientSources})
 target_include_directories (wnts PUBLIC ${includes})
