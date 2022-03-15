@@ -16,4 +16,7 @@ constexpr uint64_t ztNetworkID = 0x6ab565387ae649e4;
 // Port number that ZeroTier uses
 constexpr uint16_t ztServicePort = 9994;
 
+// Default port for the network to operate over
+constexpr uint16_t defaultPort = 12345;
+
 #endif // __NETWORKING_HPP__
