@@ -19,34 +19,6 @@ void signalCallbackHandler(int signum) {
 	std::exit(signum);
 }
 
-template<typename Duration = std::chrono::milliseconds>
-static zt::Socket connect(const zt::IpAddress& ip, uint16_t port, size_t retryAttemps = 3, Duration timeBetweenAttempts = 100ms) {
-	// We change 0 to the maximum number stored in a size_t (heat death of the unversise timeframe attempts)
-	if(retryAttemps == 0) retryAttemps--;
-
-	std::cout << retryAttemps << std::endl;
-
-	zt::Socket connectionSocket;
-	// Attemp to open a connection <retryAttempts> times
-	for(size_t i = 0; i < retryAttemps && !connectionSocket.isOpen(); i++) {
-		// Pause between each attempt
-		if(i) std::this_thread::sleep_for(timeBetweenAttempts);
-
-		try {
-			ZTCPP_THROW_ON_ERROR(connectionSocket.init(zt::SocketDomain::InternetProtocol_IPv6, zt::SocketType::Stream), ZTError);
-			ZTCPP_THROW_ON_ERROR(connectionSocket.connect(ip, port), ZTError);
-		} catch(ZTError) { /* Do nothing*/ }
-
-		std::cout << i << std::endl;
-	}
-
-	// Throw an exception if we failed to connect
-	if(!connectionSocket.isOpen())
-		throw std::runtime_error("Failed to connect");
-
-	return connectionSocket;
-}
-
 int main(int argc, char** argv) {
 	// Gracefully terminate when interrupted
 	signal(SIGINT, signalCallbackHandler);
@@ -76,10 +48,10 @@ int main(int argc, char** argv) {
 	ZTCPP_THROW_ON_ERROR(connectionSocket.bind(node.getIP(), port), ZTError);
 	ZTCPP_THROW_ON_ERROR(connectionSocket.listen(5), ZTError);
 	
-	// Start a thread that waits for a connection and then waits for data from that connection
+	// Start a thread that waits for a connection
 	listeningThread = std::jthread([&](std::stop_token stop){
 		std::cout << "Waiting for connection..." << std::endl;
-		// Look for a connection until the thread is requested to stop or we open a connection a different way
+		// Look for a connection until the thread is requested to stop
 		while(!stop.stop_requested()){
 			// Wait upto 100ms for a connection
 			auto pollres = connectionSocket.pollEvents(zt::PollEventBitmask::ReadyToReceiveAny, 100ms);
@@ -104,11 +76,9 @@ int main(int argc, char** argv) {
 
 	// If we have a peer to connect to, add them to our list of peers
 	if(remoteIP.isValid())
-		peers->emplace_back(std::move(connect(remoteIP, port)));
+		peers->emplace_back(std::move(Peer::connect(remoteIP, port)));
 
-	std::cout << "got to loop" << std::endl;
-
-	// Keep the program running indefinately, while sending messages to all of the peers
+	// Keep the program running indefinitely, while sending messages to all of the peers
 	while(true) {
 		std::time_t now = std::time(nullptr);
 		std::string message = std::asctime(std::localtime(&now));
@@ -118,7 +88,7 @@ int main(int argc, char** argv) {
 			for(auto& peer: *peersLock)
 				peer.send(message.c_str(), message.size());
 
-			if(!peersLock->empty()) std::cout << "Sent " << message << " - Peers: " << peersLock->size() << std::flush;
+			if(!peersLock->empty()) std::cout << "Sent " << message << std::flush;
 		}
 		std::this_thread::sleep_for(100ms);
 	}
