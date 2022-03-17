@@ -42,69 +42,81 @@ int main(int argc, char** argv) {
 
 	
 	// Create a socket that accepts incoming connections
-	zt::Socket listeningSocket;
-	ZTCPP_THROW_ON_ERROR(listeningSocket.init(zt::SocketDomain::InternetProtocol_IPv6, zt::SocketType::Stream), std::runtime_error);
-	ZTCPP_THROW_ON_ERROR(listeningSocket.bind(node.getIP(), port), std::runtime_error);
-	ZTCPP_THROW_ON_ERROR(listeningSocket.listen(1), std::runtime_error);
+	zt::Socket connectionSocket;
+	ZTCPP_THROW_ON_ERROR(connectionSocket.init(zt::SocketDomain::InternetProtocol_IPv6, zt::SocketType::Stream), std::runtime_error);
+	ZTCPP_THROW_ON_ERROR(connectionSocket.bind(node.getIP(), port), std::runtime_error);
+	ZTCPP_THROW_ON_ERROR(connectionSocket.listen(1), std::runtime_error);
 
 	// Create a socket that sends messages
-	zt::Socket sendingSocket;
+	zt::Socket dataSocket;
 	if(remoteIP.isValid()){
-		ZTCPP_THROW_ON_ERROR(sendingSocket.init(zt::SocketDomain::InternetProtocol_IPv6, zt::SocketType::Stream), std::runtime_error);
-		ZTCPP_THROW_ON_ERROR(sendingSocket.connect(remoteIP, port), std::runtime_error);
+		ZTCPP_THROW_ON_ERROR(dataSocket.init(zt::SocketDomain::InternetProtocol_IPv6, zt::SocketType::Stream), std::runtime_error);
+		ZTCPP_THROW_ON_ERROR(dataSocket.connect(remoteIP, port), std::runtime_error);
 	}
 	
 	// Start a thread that waits for a connection and then waits for data from that connection
 	listeningThread = std::jthread([&](std::stop_token stop){
-		std::byte recvBuf[1024];
-		std::memset(recvBuf, 0, sizeof(recvBuf));
-
 		std::cout << "Waiting for connection..." << std::endl;
-		auto s = listeningSocket.accept();
-		ZTCPP_THROW_ON_ERROR(s, std::runtime_error);
-		listeningSocket = std::move(*s);
+		// Look for a connection until the thread is requested to stop or we open a connection a different way
+		while(!stop.stop_requested() && !dataSocket.isOpen()){
+			// Wait upto 100ms for a connection
+			auto pollres = connectionSocket.pollEvents(zt::PollEventBitmask::ReadyToReceiveAny, 100ms);
+			ZTCPP_THROW_ON_ERROR(pollres, std::runtime_error);
+	
+			// If there is a connection, accept it
+			if((*pollres & zt::PollEventBitmask::ReadyToReceiveAny) != 0) {
+				auto sock = connectionSocket.accept();
+				ZTCPP_THROW_ON_ERROR(sock, std::runtime_error);
+				dataSocket = std::move(*sock);
 
-		std::cout << "Accepted Connection" << std::endl;
-		auto ip = listeningSocket.getRemoteIpAddress();
-		ZTCPP_THROW_ON_ERROR(ip, std::runtime_error);
+				while(!dataSocket.isOpen())
+					std::this_thread::sleep_for(100ms);
 
-		// If we aren't sending data, start sending data to the connecred client
-		if(!sendingSocket.isOpen()){
-			ZTCPP_THROW_ON_ERROR(sendingSocket.init(zt::SocketDomain::InternetProtocol_IPv6, zt::SocketType::Stream), std::runtime_error);
-			ZTCPP_THROW_ON_ERROR(sendingSocket.connect(*ip, port), std::runtime_error);
+				std::cout << "Accepted Connection" << std::endl;
+				auto ip = dataSocket.getRemoteIpAddress();
+				ZTCPP_THROW_ON_ERROR(ip, std::runtime_error);
+				std::cout << "from: " << *ip << std::endl;
+				break;
+			}
 		}
+
+		std::byte recvBuf[30];
+		std::memset(recvBuf, 0, sizeof(recvBuf));
 
 		// Loop unil the thread is requested to stop
 		while(!stop.stop_requested()){
-			// Wait 100ms for data
-			auto pollres = listeningSocket.pollEvents(zt::PollEventBitmask::ReadyToReceiveAny, 100ms);
+			// Wait upto 100ms for data
+			auto pollres = dataSocket.pollEvents(zt::PollEventBitmask::ReadyToReceiveAny, 100ms);
 			ZTCPP_THROW_ON_ERROR(pollres, std::runtime_error);
 	
 			// If there is data ready to be recieved...
 			if((*pollres & zt::PollEventBitmask::ReadyToReceiveAny) != 0) {
 				// Recieve the data
-				zt::IpAddress remoteIp;
+				zt::IpAddress remoteIP;
 				std::uint16_t remotePort;
-				auto res = listeningSocket.receiveFrom(recvBuf, sizeof(recvBuf), remoteIp, remotePort);
+				auto res = dataSocket.receiveFrom(recvBuf, sizeof(recvBuf), remoteIP, remotePort);
 				ZTCPP_THROW_ON_ERROR(res, std::runtime_error);
 
 				// And print it out
-				std::cout << "Received " << *res << " bytes from " << remoteIp << ":" << remotePort << ";\n"
+				std::cout << "Received " << *res << " bytes from " << remoteIP << ":" << remotePort << ";\n"
 							<< "		Message: " << (char*) recvBuf << std::endl;
+
+				// Clear the buffer
+				std::memset(recvBuf, 0, sizeof(recvBuf));
 			}
 		}
 
 		// Close the sockets when we stop the thread
-		listeningSocket.close();
-		sendingSocket.close();
+		connectionSocket.close();
+		dataSocket.close();
 	});
 
 	// Keep the program running indefinately, while sending messages
 	while(true) {
-		if(sendingSocket.isOpen()) {
+		if(dataSocket.isOpen()) {
 			std::time_t now = std::time(nullptr);
 			std::string message = std::asctime(std::localtime(&now));
-			sendingSocket.send(message.c_str(), 13);
+			dataSocket.send(message.c_str(), message.size());
 			std::cout << "Sent " << message << "!" << std::endl;
 
 			std::this_thread::sleep_for(100ms);
