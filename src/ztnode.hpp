@@ -14,21 +14,21 @@ class ZeroTierNode: public zt::EventHandlerInterface {
 public:
 	// Function which establishes a connection to ZeroTier
 	void setup() {
-		ZTCPP_THROW_ON_ERROR(zt::Config::setIdentityFromStorage(ztIdentityPath), std::runtime_error);
-		ZTCPP_THROW_ON_ERROR(zt::Config::allowNetworkCaching(true), std::runtime_error);
-		ZTCPP_THROW_ON_ERROR(zt::Config::allowPeerCaching(true), std::runtime_error);
-		ZTCPP_THROW_ON_ERROR(zt::Config::allowIdentityCaching(true), std::runtime_error);
-		ZTCPP_THROW_ON_ERROR(zt::Config::setPort(ztServicePort), std::runtime_error);
+		ZTCPP_THROW_ON_ERROR(zt::Config::setIdentityFromStorage(ztIdentityPath), ZTError);
+		ZTCPP_THROW_ON_ERROR(zt::Config::allowNetworkCaching(true), ZTError);
+		ZTCPP_THROW_ON_ERROR(zt::Config::allowPeerCaching(true), ZTError);
+		ZTCPP_THROW_ON_ERROR(zt::Config::allowIdentityCaching(true), ZTError);
+		ZTCPP_THROW_ON_ERROR(zt::Config::setPort(ztServicePort), ZTError);
 
 		std::cout << "Starting ZeroTier service..." << std::endl;
 		zt::LocalNode::setEventHandler(this);
-		ZTCPP_THROW_ON_ERROR(zt::LocalNode::start(), std::runtime_error);
+		ZTCPP_THROW_ON_ERROR(zt::LocalNode::start(), ZTError);
 
 		std::cout << "Waiting for node to come online..." << std::endl;
 		while (!online)
 			std::this_thread::sleep_for(100ms);
 
-		ZTCPP_THROW_ON_ERROR(zt::Network::join(ztNetworkID), std::runtime_error);
+		ZTCPP_THROW_ON_ERROR(zt::Network::join(ztNetworkID), ZTError);
 
 		std::cout << "Waiting to join network..." << std::endl;
 		while (networksJoinedCount <= 0)
@@ -95,8 +95,8 @@ public:
 		std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
 	}
 
-	void onUnknownEvent(int16_t aRawZeroTierEventCode) noexcept override {
-		std::cout << "[ZT] " << "An unknown Zero Tier event was dispatched (" << aRawZeroTierEventCode << ")" << std::endl;
+	void onUnknownEvent(int16_t rawEventCode) noexcept override {
+		std::cout << "[ZT] " << "An unknown Zero Tier event was dispatched (" << rawEventCode << ")" << std::endl;
 	}
 };
 

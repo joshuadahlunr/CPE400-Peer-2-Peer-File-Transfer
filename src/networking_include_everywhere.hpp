@@ -8,6 +8,9 @@
 
 namespace zt = jbatnozic::ztcpp;
 
+// Exception class for ZT errors, allows them to be differentiated from other types of exceptions
+struct ZTError: public std::runtime_error { using std::runtime_error::runtime_error; };
+
 
 // Path to the ZeroTier node's identity
 constexpr const char* ztIdentityPath = ".nodedata";

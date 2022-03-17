@@ -1,12 +1,13 @@
 #include "ztnode.hpp"
-#include "jthread.hpp"
+#include "peer.hpp"
+#include "monitor.hpp"
 #include <csignal>
-#include <cstring>
 #include <Argos/Argos.hpp>
 
 // Variable storing our connection to ZeroTier
 ZeroTierNode node;
 std::jthread listeningThread;
+monitor<std::vector<Peer>> peers;
 
 // Callback that shuts down the program when interrupted (ctrl + c in terminal)
 void signalCallbackHandler(int signum) {
@@ -16,6 +17,34 @@ void signalCallbackHandler(int signum) {
 
 	// Terminate program
 	std::exit(signum);
+}
+
+template<typename Duration = std::chrono::milliseconds>
+static zt::Socket connect(const zt::IpAddress& ip, uint16_t port, size_t retryAttemps = 3, Duration timeBetweenAttempts = 100ms) {
+	// We change 0 to the maximum number stored in a size_t (heat death of the unversise timeframe attempts)
+	if(retryAttemps == 0) retryAttemps--;
+
+	std::cout << retryAttemps << std::endl;
+
+	zt::Socket connectionSocket;
+	// Attemp to open a connection <retryAttempts> times
+	for(size_t i = 0; i < retryAttemps && !connectionSocket.isOpen(); i++) {
+		// Pause between each attempt
+		if(i) std::this_thread::sleep_for(timeBetweenAttempts);
+
+		try {
+			ZTCPP_THROW_ON_ERROR(connectionSocket.init(zt::SocketDomain::InternetProtocol_IPv6, zt::SocketType::Stream), ZTError);
+			ZTCPP_THROW_ON_ERROR(connectionSocket.connect(ip, port), ZTError);
+		} catch(ZTError) { /* Do nothing*/ }
+
+		std::cout << i << std::endl;
+	}
+
+	// Throw an exception if we failed to connect
+	if(!connectionSocket.isOpen())
+		throw std::runtime_error("Failed to connect");
+
+	return connectionSocket;
 }
 
 int main(int argc, char** argv) {
@@ -43,84 +72,55 @@ int main(int argc, char** argv) {
 	
 	// Create a socket that accepts incoming connections
 	zt::Socket connectionSocket;
-	ZTCPP_THROW_ON_ERROR(connectionSocket.init(zt::SocketDomain::InternetProtocol_IPv6, zt::SocketType::Stream), std::runtime_error);
-	ZTCPP_THROW_ON_ERROR(connectionSocket.bind(node.getIP(), port), std::runtime_error);
-	ZTCPP_THROW_ON_ERROR(connectionSocket.listen(1), std::runtime_error);
-
-	// Create a socket that sends messages
-	zt::Socket dataSocket;
-	if(remoteIP.isValid()){
-		ZTCPP_THROW_ON_ERROR(dataSocket.init(zt::SocketDomain::InternetProtocol_IPv6, zt::SocketType::Stream), std::runtime_error);
-		ZTCPP_THROW_ON_ERROR(dataSocket.connect(remoteIP, port), std::runtime_error);
-	}
+	ZTCPP_THROW_ON_ERROR(connectionSocket.init(zt::SocketDomain::InternetProtocol_IPv6, zt::SocketType::Stream), ZTError);
+	ZTCPP_THROW_ON_ERROR(connectionSocket.bind(node.getIP(), port), ZTError);
+	ZTCPP_THROW_ON_ERROR(connectionSocket.listen(5), ZTError);
 	
 	// Start a thread that waits for a connection and then waits for data from that connection
 	listeningThread = std::jthread([&](std::stop_token stop){
 		std::cout << "Waiting for connection..." << std::endl;
 		// Look for a connection until the thread is requested to stop or we open a connection a different way
-		while(!stop.stop_requested() && !dataSocket.isOpen()){
+		while(!stop.stop_requested()){
 			// Wait upto 100ms for a connection
 			auto pollres = connectionSocket.pollEvents(zt::PollEventBitmask::ReadyToReceiveAny, 100ms);
-			ZTCPP_THROW_ON_ERROR(pollres, std::runtime_error);
+			ZTCPP_THROW_ON_ERROR(pollres, ZTError);
 	
 			// If there is a connection, accept it
 			if((*pollres & zt::PollEventBitmask::ReadyToReceiveAny) != 0) {
 				auto sock = connectionSocket.accept();
-				ZTCPP_THROW_ON_ERROR(sock, std::runtime_error);
-				dataSocket = std::move(*sock);
-
-				while(!dataSocket.isOpen())
-					std::this_thread::sleep_for(100ms);
+				ZTCPP_THROW_ON_ERROR(sock, ZTError);
+				peers->emplace_back(std::move(*sock));
 
 				std::cout << "Accepted Connection" << std::endl;
-				auto ip = dataSocket.getRemoteIpAddress();
-				ZTCPP_THROW_ON_ERROR(ip, std::runtime_error);
+				auto ip = peers.unsafe().back().getSocket().getRemoteIpAddress();
+				ZTCPP_THROW_ON_ERROR(ip, ZTError);
 				std::cout << "from: " << *ip << std::endl;
-				break;
 			}
 		}
 
-		std::byte recvBuf[30];
-		std::memset(recvBuf, 0, sizeof(recvBuf));
-
-		// Loop unil the thread is requested to stop
-		while(!stop.stop_requested()){
-			// Wait upto 100ms for data
-			auto pollres = dataSocket.pollEvents(zt::PollEventBitmask::ReadyToReceiveAny, 100ms);
-			ZTCPP_THROW_ON_ERROR(pollres, std::runtime_error);
-	
-			// If there is data ready to be recieved...
-			if((*pollres & zt::PollEventBitmask::ReadyToReceiveAny) != 0) {
-				// Recieve the data
-				zt::IpAddress remoteIP;
-				std::uint16_t remotePort;
-				auto res = dataSocket.receiveFrom(recvBuf, sizeof(recvBuf), remoteIP, remotePort);
-				ZTCPP_THROW_ON_ERROR(res, std::runtime_error);
-
-				// And print it out
-				std::cout << "Received " << *res << " bytes from " << remoteIP << ":" << remotePort << ";\n"
-							<< "		Message: " << (char*) recvBuf << std::endl;
-
-				// Clear the buffer
-				std::memset(recvBuf, 0, sizeof(recvBuf));
-			}
-		}
-
-		// Close the sockets when we stop the thread
+		// Close the socket when we stop the thread
 		connectionSocket.close();
-		dataSocket.close();
 	});
 
-	// Keep the program running indefinately, while sending messages
-	while(true) {
-		if(dataSocket.isOpen()) {
-			std::time_t now = std::time(nullptr);
-			std::string message = std::asctime(std::localtime(&now));
-			dataSocket.send(message.c_str(), message.size());
-			std::cout << "Sent " << message << "!" << std::endl;
+	// If we have a peer to connect to, add them to our list of peers
+	if(remoteIP.isValid())
+		peers->emplace_back(std::move(connect(remoteIP, port)));
 
-			std::this_thread::sleep_for(100ms);
+	std::cout << "got to loop" << std::endl;
+
+	// Keep the program running indefinately, while sending messages to all of the peers
+	while(true) {
+		std::time_t now = std::time(nullptr);
+		std::string message = std::asctime(std::localtime(&now));
+
+		{
+			auto peersLock = peers.read_lock();
+			for(auto& peer: *peersLock)
+				peer.send(message.c_str(), message.size());
+
+			if(!peersLock->empty()) std::cout << "Sent " << message << " - Peers: " << peersLock->size() << std::flush;
 		}
+		std::this_thread::sleep_for(100ms);
 	}
 
 	return 0;
