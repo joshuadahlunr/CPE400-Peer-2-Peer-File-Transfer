@@ -1,19 +1,17 @@
 #include "ztnode.hpp"
-#include "peer.hpp"
-#include "monitor.hpp"
+#include "peer_manager.hpp"
 #include <csignal>
 #include <Argos/Argos.hpp>
 
 // Variable storing our connection to ZeroTier
-ZeroTierNode node;
-std::jthread listeningThread;
-monitor<std::vector<Peer>> peers;
+// ZeroTierNode node;
+// PeerManager peerMgr;
 
 // Callback that shuts down the program when interrupted (ctrl + c in terminal)
 void signalCallbackHandler(int signum) {
 	// Stop the listening thread
-	listeningThread.request_stop();
-	listeningThread.join();
+	// listeningThread.request_stop();
+	// listeningThread.join();
 
 	// Terminate program
 	std::exit(signum);
@@ -36,45 +34,16 @@ int main(int argc, char** argv) {
 	auto remoteIP = zt::IpAddress::ipv6FromString(args.value("IP").as_string());
 
 	// Establish our connection to ZeroTier
-	node.setup();
+	ZeroTierNode::singleton().setup();
 
-	std::cout << "\nConnection IP: >> " << node.getIP() << " <<\n" << std::endl;
+	std::cout << "\nConnection IP: >> " << ZeroTierNode::singleton().getIP() << " <<\n" << std::endl;
 
+	// Initialize the PeerManager singleton (starts listening for connections)
+	PeerManager::singleton().setup(ZeroTierNode::singleton().getIP(), port);
+	// Aquire a reference to the list of peers 
+	auto& peers = PeerManager::singleton().getPeers();
 
-	
-	// Create a socket that accepts incoming connections
-	zt::Socket connectionSocket;
-	ZTCPP_THROW_ON_ERROR(connectionSocket.init(zt::SocketDomain::InternetProtocol_IPv6, zt::SocketType::Stream), ZTError);
-	ZTCPP_THROW_ON_ERROR(connectionSocket.bind(node.getIP(), port), ZTError);
-	ZTCPP_THROW_ON_ERROR(connectionSocket.listen(5), ZTError);
-	
-	// Start a thread that waits for a connection
-	listeningThread = std::jthread([&](std::stop_token stop){
-		std::cout << "Waiting for connection..." << std::endl;
-		// Look for a connection until the thread is requested to stop
-		while(!stop.stop_requested()){
-			// Wait upto 100ms for a connection
-			auto pollres = connectionSocket.pollEvents(zt::PollEventBitmask::ReadyToReceiveAny, 100ms);
-			ZTCPP_THROW_ON_ERROR(pollres, ZTError);
-	
-			// If there is a connection, accept it
-			if((*pollres & zt::PollEventBitmask::ReadyToReceiveAny) != 0) {
-				auto sock = connectionSocket.accept();
-				ZTCPP_THROW_ON_ERROR(sock, ZTError);
-				peers->emplace_back(std::move(*sock));
-
-				std::cout << "Accepted Connection" << std::endl;
-				auto ip = peers.unsafe().back().getSocket().getRemoteIpAddress();
-				ZTCPP_THROW_ON_ERROR(ip, ZTError);
-				std::cout << "from: " << *ip << std::endl;
-			}
-		}
-
-		// Close the socket when we stop the thread
-		connectionSocket.close();
-	});
-
-	// If we have a peer to connect to, add them to our list of peers
+	// If we have a peer to connect to from the command line, add them to our list of peers
 	if(remoteIP.isValid())
 		peers->emplace_back(std::move(Peer::connect(remoteIP, port)));
 

@@ -12,6 +12,12 @@ class ZeroTierNode: public zt::EventHandlerInterface {
 	zt::IpAddress ip = zt::IpAddress::ipv4Unspecified();
 
 public:
+	// Function which gets the ZeroTierNode singleton	
+	static ZeroTierNode& singleton() {
+		static ZeroTierNode instance;
+		return instance;
+	}
+
 	// Function which establishes a connection to ZeroTier
 	void setup() {
 		ZTCPP_THROW_ON_ERROR(zt::Config::setIdentityFromStorage(ztIdentityPath), ZTError);
@@ -47,6 +53,13 @@ public:
 
 	bool isOnline() const { return online; }
 	const zt::IpAddress& getIP() const { return ip; }
+
+
+private:
+	// Only the singleton can be constructed
+	ZeroTierNode() {}
+
+public:
 
 
 	// -- ZeroTier Event Handlers --
