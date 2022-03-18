@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
 
 	// Initialize the PeerManager singleton (starts listening for connections)
 	PeerManager::singleton().setup(ZeroTierNode::singleton().getIP(), port);
-	// Aquire a reference to the list of peers 
+	// Acquire a reference to the list of peers 
 	auto& peers = PeerManager::singleton().getPeers();
 
 	// If we have a peer to connect to from the command line, add them to our list of peers
@@ -48,9 +48,10 @@ int main(int argc, char** argv) {
 		peers->emplace_back(std::move(Peer::connect(remoteIP, port)));
 
 	// Keep the program running indefinitely, while sending messages to all of the peers
+	size_t i = 0;
 	while(true) {
 		std::time_t now = std::time(nullptr);
-		std::string message = std::asctime(std::localtime(&now));
+		std::string message = std::to_string(i++) + std::asctime(std::localtime(&now));
 
 		{
 			auto peersLock = peers.read_lock();

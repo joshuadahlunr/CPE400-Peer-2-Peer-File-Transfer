@@ -12,7 +12,7 @@ class Peer {
 	std::jthread listeningThread;
 
 	// Buffer we receive data in
-	std::byte buffer[30];
+	std::vector<std::byte> buffer = std::vector<std::byte>{30, {}};
 
 public:
 	Peer() {}
@@ -66,10 +66,20 @@ public:
 	const zt::Socket& getSocket() const { return socket; }
 
 	// Send some data to to the connected peer
-	void send(const void* data, size_t size) const { reference_cast<zt::Socket>(socket).send(data, size); }
+	void send(const void* data, uint64_t size) const {
+		zt::Socket& socket = reference_cast<zt::Socket>(this->socket);
+		// Before we send data, we send the size of the data
+		socket.send(&size, sizeof(size));
+		socket.send(data, size); 
+	}
 
 protected:
 	void threadFunction(std::stop_token stop){
+		// Variable tracking how much data we should expect to receive in this message
+		uint64_t dataSize = 0;
+		// Variable tracking how much data we have currently received
+		uint64_t dataReceived = 0;
+
 		// Loop unil the thread is requested to stop
 		while(!stop.stop_requested()){
 			try {
@@ -81,30 +91,67 @@ protected:
 		
 				// If there is data ready to be received...
 				if((*pollres & zt::PollEventBitmask::ReadyToReceiveAny) != 0) {
-					// Clear the receive buffer // TODO: Needed?
-					std::memset(buffer, 0, sizeof(buffer));
+					// Get a pointer to the buffer's memory
+					std::byte* bufferMem = &buffer[0];
 
-					// Receive the data
-					zt::IpAddress remoteIP;
-					std::uint16_t remotePort;
-					auto res = socket.receiveFrom(buffer, sizeof(buffer), remoteIP, remotePort);
-					ZTCPP_THROW_ON_ERROR(res, ZTError);
+					// If we haven't determined how much data we have to receive...
+					if(dataSize == 0){
+						// Read a uint64 worth of data (remember it may take multiple loop iterations to receive that data)
+						auto res = socket.receive(bufferMem + dataReceived, sizeof(dataSize) - dataReceived);
+						ZTCPP_THROW_ON_ERROR(res, ZTError);
+						dataReceived += *res;
 
-					// And print it out
-					std::cout << "Received " << *res << " bytes from " << remoteIP << ":" << remotePort << ";\n"
-								<< "		Message: " << (char*) buffer << std::endl;
+						// Once we have read the uint64...
+						if(dataReceived >= sizeof(dataSize)){
+							// Mark it is as our data size
+							dataSize = *((uint64_t*) bufferMem);
+							dataReceived -= sizeof(dataSize); // Subtracting to account for the possibility of extra data
+
+							// If there is extra data in the buffer, move it to the front and resize the buffer to match our data
+							if(dataReceived > 0) memmove(bufferMem, bufferMem + sizeof(dataSize), buffer.size() - sizeof(dataSize)); // TODO: Needed?
+							buffer.resize(dataSize); // TODO: should this only be allowed to grow the buffer?
+						}
+					// If we have determined how much data we have to receive...
+					} else {
+						// Read <dataSize> bytes of data (remember it may take multiple loop iterations to receive that data)
+						auto res = socket.receive(bufferMem + dataReceived, buffer.size() - dataReceived);
+						ZTCPP_THROW_ON_ERROR(res, ZTError);
+						dataReceived += *res;
+
+						// Once we have read <dataSize> bytes...
+						if(dataReceived >= dataSize) {
+							// Process the message
+							processMessage(dataSize);
+
+							// If there is extra data in the buffer, move it to the front
+							if(dataReceived > 0) memmove(bufferMem, bufferMem + dataSize, buffer.size() - dataSize); // TODO: Needed?
+
+							// Reset our data size back to 0 (we need to get the size of the next message from the network)
+							dataReceived -= dataSize; // Subtracting to account for the possibility of extra data
+							dataSize = 0;
+						}
+					}
 				}
 			} catch(ZTError e) {
-				// if(std::string(e.what()).find("zts_errno=107") != std::string::npos) {
-				// 	// We have been disconnected and this peer is no longer valid
-				// 	std::cout << "DISCONNECT" << std::endl;
-				// 	return;
-				// }
+				std::string error = e.what();
+				if(error.find("zts_errno=107") != std::string::npos
+					| error.find("zts_poll returned ZTS_POLLERR") != std::string::npos)
+				{
+					// We have been disconnected and this peer is no longer valid
+					std::cout << "DISCONNECT" << std::endl;
+					// TODO: Remove from list of peers
+					return;
+				}
 					
 				// TODO: This is where we would need to handle a loss of connection
-				std::cerr << "[ZT][Error] " << e.what() << std::endl;
+				std::cerr << "[ZT][Error] " << error << std::endl;
 			}
 		}
+	}
+
+	// Function that processes a message
+	void processMessage(size_t dataSize) {
+		std::cout << "Received " << dataSize << " bytes:\n" << (char*) buffer.data() << std::endl;
 	}
 };
 
