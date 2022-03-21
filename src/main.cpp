@@ -3,22 +3,15 @@
 #include <csignal>
 #include <Argos/Argos.hpp>
 
-// Variable storing our connection to ZeroTier
-// ZeroTierNode node;
-// PeerManager peerMgr;
 
 // Callback that shuts down the program when interrupted (ctrl + c in terminal)
 void signalCallbackHandler(int signum) {
-	// Stop the listening thread
-	// listeningThread.request_stop();
-	// listeningThread.join();
-
-	// Terminate program
+	// Terminate program (by calling exit, global variables are destroyed)
 	std::exit(signum);
 }
 
 int main(int argc, char** argv) {
-	// Gracefully terminate when interrupted
+	// Gracefully terminate when interrupted (ctrl + c in terminal)
 	signal(SIGINT, signalCallbackHandler);
 
 	// Parse the command line

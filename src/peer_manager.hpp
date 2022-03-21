@@ -4,10 +4,12 @@
 #include "peer.hpp"
 #include "monitor.hpp"
 
+// Singleton class representing a list of peers, it runs a listening thread which automatically detects connecting peers
+//	and adds them to its list of peers.
 class PeerManager {
 	// Thread that listens for incoming connections
 	std::jthread listeningThread;
-	// List of peers (guarded by a monitor, access to this object goes through a mutex)
+	// List of peers (guarded by a monitor, access to this object ges through a mutex)
 	monitor<std::vector<Peer>> peers;
 
 public:

@@ -5,6 +5,7 @@
 #include <cstring>
 #include "networking_include_everywhere.hpp"
 
+// Class representing a connection to another Peer on the network, it wraps a TCP socket and listening thread
 class Peer {
 	// The socket we are listening and sending on
 	zt::Socket socket;
@@ -16,7 +17,7 @@ class Peer {
 
 public:
 	Peer() {}
-	Peer(zt::Socket&& _socket, bool stayPaused = false) : socket(std::move(_socket)),
+	Peer(zt::Socket&& _socket) : socket(std::move(_socket)),
 		listeningThread([this](std::stop_token stop){ this->threadFunction(stop); })
 	{ }
 

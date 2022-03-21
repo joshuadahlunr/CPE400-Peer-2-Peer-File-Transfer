@@ -3,6 +3,7 @@
 
 #include "networking_include_everywhere.hpp"
 
+// Singleton class representing ZeroTier Node, connects to ZeroTier and provides access to ZeroTier properties
 class ZeroTierNode: public zt::EventHandlerInterface {
 	// Variable tracking if this node is started or not
 	bool online = false;
