@@ -7,3 +7,6 @@
 [submodule "thirdparty/Argos"]
 	path = thirdparty/Argos
 	url = https://github.com/jebreimo/Argos.git
+[submodule "thirdparty/dtl"]
+	path = thirdparty/dtl
+	url = https://github.com/cubicdaiya/dtl.git
