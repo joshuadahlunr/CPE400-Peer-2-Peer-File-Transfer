@@ -1,5 +1,6 @@
 #include "ztnode.hpp"
 #include "peer_manager.hpp"
+#include "diff.hpp"
 #include <csignal>
 #include <Argos/Argos.hpp>
 
@@ -25,6 +26,16 @@ int main(int argc, char** argv) {
         .parse(argc, argv);
 	uint16_t port = args.value("-p").as_uint(defaultPort);
 	auto remoteIP = zt::IpAddress::ipv6FromString(args.value("IP").as_string());
+
+
+	{
+		std::string a = "Hello Bob!", b = "Hello Barb!";
+		auto diff = extractDiff(a, b);
+
+		std::cout << applyDiff(a, diff) << std::endl; // Converts a to "Hello Barb!"
+		std::cout << undoDiff(b, diff) << std::endl; // Converts b to "Hello Bob!"
+	}
+	
 
 	// Establish our connection to ZeroTier
 	ZeroTierNode::singleton().setup();
