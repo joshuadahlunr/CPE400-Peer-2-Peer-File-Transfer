@@ -15,8 +15,8 @@ set(ztcpppath "${thirdparty}/ztcpp/ZTCpp/")
 # Build c++ wrapper around zeroteir
 add_compile_definitions("ZTCPP_EXPORT")
 add_library(ztcpp "${ztcpppath}Source/Events.cpp" "${ztcpppath}Source/Ip_address.cpp" "${ztcpppath}Source/Service.cpp" "${ztcpppath}Source/Sockaddr_util.cpp" "${ztcpppath}Source/Socket.cpp")
-target_include_directories(ztcpp PUBLIC "${ztcpppath}Include/" "${thirdparty}libzt/include" "${thirdparty}dtl")
-target_link_libraries(ztcpp PUBLIC zt-static Threads::Threads)
+target_include_directories(ztcpp PUBLIC "${ztcpppath}Include/" "${thirdparty}libzt/include" "${thirdparty}dtl" ${Boost_INCLUDE_DIRS})
+target_link_libraries(ztcpp PUBLIC zt-static Threads::Threads ${Boost_LIBRARIES})
 
 # Command line parser
 add_subdirectory("${thirdparty}Argos")
