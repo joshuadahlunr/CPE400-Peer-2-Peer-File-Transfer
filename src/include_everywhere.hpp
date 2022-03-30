@@ -8,6 +8,10 @@
 #include <thread>
 #include <vector>
 
+// Include nonstd::span as std::span
+#include <span.hpp>
+namespace std { using namespace nonstd; }
+
 using namespace std::literals;
 
 // Converts a reference of one type to another type... no checks are performed, no bits are changed, can cast away const, it is completely unsafe
