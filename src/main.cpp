@@ -1,14 +1,32 @@
 #include "ztnode.hpp"
 #include "peer_manager.hpp"
+#include "file_sweep.hpp"
 #include "diff.hpp"
 #include <csignal>
 #include <Argos/Argos.hpp>
+#include <boost/algorithm/string.hpp>
 
 
 // Callback that shuts down the program when interrupted (ctrl + c in terminal)
 void signalCallbackHandler(int signum) {
 	// Terminate program (by calling exit, global variables are destroyed)
 	std::exit(signum);
+}
+
+
+// Callback called whenever a file is created
+void onFileCreated(const std::filesystem::path& path) {
+	std::cout << path << " created!" << std::endl;
+}
+
+// Callback called whenever a file is modified
+void onFileModified(const std::filesystem::path& path) {
+	std::cout << path << " modified!" << std::endl;
+}
+
+// Callback called whenever a file is deleted
+void onFileDeleted(const std::filesystem::path& path) {
+	std::cout << path << " deleted!" << std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -26,6 +44,7 @@ int main(int argc, char** argv) {
         .parse(argc, argv);
 	uint16_t port = args.value("-p").as_uint(defaultPort);
 	auto remoteIP = zt::IpAddress::ipv6FromString(args.value("IP").as_string());
+	std::vector<std::filesystem::path> folders; boost::split(folders, args.value("FOLDER").as_string(), boost::is_any_of(","));
 
 
 	{
@@ -39,23 +58,26 @@ int main(int argc, char** argv) {
 
 	// Establish our connection to ZeroTier
 	ZeroTierNode::singleton().setup();
-
 	std::cout << "\nConnection IP: >> " << ZeroTierNode::singleton().getIP() << " <<\n" << std::endl;
+
 
 	// Initialize the PeerManager singleton (starts listening for connections)
 	PeerManager::singleton().setup(ZeroTierNode::singleton().getIP(), port);
-	// Acquire a reference to the list of peers 
+	// Acquire a reference to the list of peers
 	auto& peers = PeerManager::singleton().getPeers();
 
 	// If we have a peer to connect to from the command line, add them to our list of peers
 	if(remoteIP.isValid())
 		peers->emplace_back(std::move(Peer::connect(remoteIP, port)));
 
-	// Keep the program running indefinitely, while sending messages to all of the peers
-	size_t i = 0;
+
+	// Create a filesystem sweeper that scan the folders from command line, and repoerts its results to the onFile* functions in this file
+	FilesystemSweeper sweeper{folders, onFileCreated, onFileModified, onFileDeleted};
+	sweeper.sweep(/*total*/ true);
+
 	while(true) {
 		std::time_t now = std::time(nullptr);
-		std::string message = std::to_string(i++) + std::asctime(std::localtime(&now));
+		std::string message = std::to_string(sweeper.iteration) + std::asctime(std::localtime(&now));
 
 		{
 			auto peersLock = peers.read_lock();
@@ -64,7 +86,11 @@ int main(int argc, char** argv) {
 
 			if(!peersLock->empty()) std::cout << "Sent " << message << std::flush;
 		}
-		std::this_thread::sleep_for(100ms);
+
+		// Sweep the file system, with a total sweep every 10 iterations (10 seconds)
+		sweeper.totalSweepEveryN(10);
+
+		std::this_thread::sleep_for(1s);
 	}
 
 	return 0;
