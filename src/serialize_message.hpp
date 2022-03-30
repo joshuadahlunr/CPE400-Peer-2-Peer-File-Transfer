@@ -6,47 +6,64 @@
 */
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/base_object.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/date_time/posix_time/posix_time_io.hpp>
-#include <boost/date_time/posix_time/conversion.hpp>
-#include <boost/date_time/posix_time/time_serialize.hpp>
+// #include <boost/date_time/posix_time/posix_time.hpp>
+// #include <boost/date_time/posix_time/posix_time_io.hpp>
+// #include <boost/date_time/posix_time/conversion.hpp>
+// #include <boost/date_time/posix_time/time_serialize.hpp>
 #include <filesystem>
 
 
-#include <filesystem>
-//#include "include_everywhere.hpp"
+#include "include_everywhere.hpp"
 
 struct Message
 {
 	friend class boost::serialization::access;
 	// Action flag must be enumerator.
-	int flag;
+	enum Type : uint8_t {lock, unlock, deleteFile, create, change, connect, disconnect} type;
 	// To hold data for originator node. Must be 64 bit int.
-	uint64_t originatorNode;    
+	uint64_t originatorNode;
 
 	template <typename Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
-		ar& flag;
+		ar& reference_cast<uint8_t>(type);
 		ar& originatorNode;
 	}
 };
 
-struct FileMessage
+struct FileMessage : Message
 {
-   	 friend class boost::serialization::access;
+   	friend class boost::serialization::access;
 	// To target specific file in path.
-	std::string targetFile;
+	std::filesystem::path targetFile;
 	// To obtain timestamp for sweeping.
-	boost::posix_time::ptime timestamp;
+	std::chrono::system_clock::time_point timestamp;
 
-	template <typename Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
-		ar& targetFile;
-		ar& timestamp;
-	}
+	template<class Archive>
+    void save(Archive & ar, const unsigned int version) const
+    {
+		ar& boost::serialization::base_object<Message>(*this);
+		// Save target file as a string
+        ar& targetFile.string();
+		// Save the timestamp as a time_t (long int)
+		ar& std::chrono::system_clock::to_time_t(timestamp);
+    }
+    template<class Archive>
+    void load(Archive & ar, const unsigned int version)
+    {
+		ar& boost::serialization::base_object<Message>(*this);
+
+		// Load target file as a string and then convert it
+		std::string tempFile;
+        ar& tempFile;
+		targetFile = tempFile;
+
+		// Load the timestamp as a time_t and then convert it
+		time_t tm;
+		ar& tm;
+		timestamp = std::chrono::system_clock::from_time_t(tm);
+    }
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
 struct FileCreate : FileMessage
@@ -87,11 +104,7 @@ struct Disconnect : Message
 	{
 		size = disConList.size();
 		ar& boost::serialization::base_object<Message>(*this);
-		ar& size;
-		for (int i = 0; i < size; i++)
-		{
-			ar& disConList[i];
-		}
+		ar& disConList;
 	}
 };
 
@@ -106,6 +119,6 @@ struct Connect : Message
 	{
 		size = connectList.size();
 		ar& boost::serialization::base_object<Message>(*this);
-			ar& connectList;
+		ar& connectList;
 	}
 };

@@ -68,99 +68,101 @@ int main (void)
 #pragma endregion
 	*/
 
-	/*
-#pragma region FileCreate struct test
-	FileCreate myFile;
-	myFile.targetFile = "mytest.txt";
-	myFile.timestamp = boost::posix_time::from_time_t(boost::filesystem::last_write_time(myFile.targetFile));
-	myFile.fCreate = "Create me";
+	
+// #pragma region FileCreate struct test
+// 	FileCreate myFile;
+// 	myFile.targetFile = "mytest.txt";
+// 	myFile.timestamp = std::chrono::system_clock::now();
+// 	myFile.fCreate = "Create me";
 
-	boost::archive::binary_oarchive ao{ ss };
-	ao << myFile;
+// 	boost::archive::binary_oarchive ao{ ss };
+// 	ao << myFile;
 
-	FileCreate myNewFile;
-	boost::archive::binary_iarchive ai{ ss };
-	ai >> myNewFile;
+// 	FileCreate myNewFile;
+// 	boost::archive::binary_iarchive ai{ ss };
+// 	ai >> myNewFile;
 
-	std::cout << myNewFile.targetFile << " " << myNewFile.timestamp << " " << myNewFile.fCreate << std::endl;
-#pragma endregion
-	*/
+// 	std::time_t ttp = to_time_t(myFile.timestamp);
+// 	std::cout << myNewFile.targetFile << " " << std::ctime(&ttp) << " " << myNewFile.fCreate << std::endl;
+// #pragma endregion
+	
 
-	/*
-#pragma region FileChange struct test
-	FileChange myFile;
-	myFile.targetFile = "mytest.txt";
-	myFile.timestamp = boost::posix_time::from_time_t(boost::filesystem::last_write_time(myFile.targetFile));
-	myFile.fCreate = "Create me";
+	
+// #pragma region FileChange struct test
+// 	FileChange myFile;
+// 	myFile.targetFile = "mytest.txt";
+// 	myFile.timestamp = std::chrono::system_clock::now();
+// 	myFile.fChange = "Create me";
 
-	boost::archive::binary_oarchive ao{ ss };
-	ao << myFile;
+// 	boost::archive::binary_oarchive ao{ ss };
+// 	ao << myFile;
 
-	FileChange myNewFile;
-	boost::archive::binary_iarchive ai{ ss };
-	ai >> myNewFile;
+// 	FileChange myNewFile;
+// 	boost::archive::binary_iarchive ai{ ss };
+// 	ai >> myNewFile;
 
-	std::cout << myNewFile.targetFile << " " << myNewFile.timestamp << " " << myNewFile.fCreate << std::endl;
-#pragma endregion
-	*/
+// 	std::time_t ttp = to_time_t(myFile.timestamp);
+// 	std::cout << myNewFile.targetFile << " " << std::ctime(&ttp) << " " << myNewFile.fChange << std::endl;
+// #pragma endregion
+	
 
-	/*
-#pragma region Connect struct test
-	Connect myConnection;
-	uint64_t a = 123;
-	uint64_t b = 456;
-	uint64_t c = 789;
+	
+// #pragma region Connect struct test
+// 	Connect myConnection;
+// 	uint64_t a = 123;
+// 	uint64_t b = 456;
+// 	uint64_t c = 789;
 
-	myConnection.connectList.push_back(a);
-	myConnection.connectList.push_back(b);
-	myConnection.connectList.push_back(c);
-	myConnection.flag = 2;
-	myConnection.originatorNode = 123456789;
+// 	myConnection.connectList.push_back(a);
+// 	myConnection.connectList.push_back(b);
+// 	myConnection.connectList.push_back(c);
+// 	myConnection.type = Message::Type::connect;
+// 	myConnection.originatorNode = 123456789;
 
-	boost::archive::binary_oarchive ao{ ss };
-	ao << myConnection;
+// 	boost::archive::binary_oarchive ao{ ss };
+// 	ao << myConnection;
 
-	Connect myNewConnection;
-	boost::archive::binary_iarchive ai{ ss };
-	ai >> myNewConnection;
+// 	Connect myNewConnection;
+// 	boost::archive::binary_iarchive ai{ ss };
+// 	ai >> myNewConnection;
 
-	int size = myNewConnection.connectList.size();
-	for (int i = 0; i < size; i++)
-	{
-		std::cout << myNewConnection.connectList[i] << " ";
-	}
-	std::cout << myNewConnection.flag << " " << myNewConnection.originatorNode << std::endl;
+// 	int size = myNewConnection.connectList.size();
+// 	for (int i = 0; i < size; i++)
+// 	{
+// 		std::cout << myNewConnection.connectList[i] << " ";
+// 	}
+// 	std::cout << (int)myNewConnection.type << " " << myNewConnection.originatorNode << std::endl;
 
-#pragma endregion
-	*/
+// #pragma endregion
+	
 
-#pragma region Disconnect struct test
-	Connect myDisconnection;
-	uint64_t a = 123;
-	uint64_t b = 456;
-	uint64_t c = 789;
+// #pragma region Disconnect struct test
+// 	Disconnect myDisconnection;
+// 	uint64_t a = 123;
+// 	uint64_t b = 456;
+// 	uint64_t c = 789;
 
-	myDisconnection.connectList.push_back(a);
-	myDisconnection.connectList.push_back(b);
-	myDisconnection.connectList.push_back(c);
-	myDisconnection.flag = 2;
-	myDisconnection.originatorNode = 123456789;
+// 	myDisconnection.disConList.push_back(a);
+// 	myDisconnection.disConList.push_back(b);
+// 	myDisconnection.disConList.push_back(c);
+// 	myDisconnection.type = Message::Type::disconnect;
+// 	myDisconnection.originatorNode = 123456789;
 
-	boost::archive::binary_oarchive ao{ ss };
-	ao << myDisconnection;
+// 	boost::archive::binary_oarchive ao{ ss };
+// 	ao << myDisconnection;
 
-	Connect myNewDisconnection;
-	boost::archive::binary_iarchive ai{ ss };
-	ai >> myNewDisconnection;
+// 	Disconnect myNewDisconnection;
+// 	boost::archive::binary_iarchive ai{ ss };
+// 	ai >> myNewDisconnection;
 
-	int size = myNewDisconnection.connectList.size();
-	for (int i = 0; i < size; i++)
-	{
-		std::cout << myNewDisconnection.connectList[i] << " ";
-	}
-	std::cout << myNewDisconnection.flag << " " << myNewDisconnection.originatorNode << std::endl;
+// 	int size = myNewDisconnection.disConList.size();
+// 	for (int i = 0; i < size; i++)
+// 	{
+// 		std::cout << myNewDisconnection.disConList[i] << " ";
+// 	}
+// 	std::cout << (int)myNewDisconnection.type << " " << myNewDisconnection.originatorNode << std::endl;
 
-#pragma endregion
+// #pragma endregion
 
 	
 	return 0;
