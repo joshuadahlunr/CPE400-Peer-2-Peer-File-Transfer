@@ -1,52 +1,120 @@
-//Annette 
+/*
+	Name: Antonio Massa
+	Date: 3/27/2022
+
+	Modified from messages.hpp by Annette
+*/
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/base_object.hpp>
 #include <filesystem>
+
 
 #include "include_everywhere.hpp"
 
-
-
-// Parent structure for disconnect and connect.
 struct Message
 {
-    enum Type{lock, unlock, deleteFile, create, change, connect, disconnect} type;  // Action flag must be enumerator.
-    uint64_t originatorNode;    // To hold data for originator node. Must be 64 bit int.
+	friend class boost::serialization::access;
+	// Action flag must be enumerator.
+	enum Type : uint8_t {lock, unlock, deleteFile, create, change, connect, disconnect} type;
+	// To hold data for originator node. Must be 64 bit int.
+	uint64_t originatorNode;
+
+	template <typename Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar& reference_cast<uint8_t>(type);
+		ar& originatorNode;
+	}
 };
 
-// Parent structure for Filecreate and FileChange.
-struct FileMessage
+struct FileMessage : Message
 {
-    // To target specific file in path.
-    std::filesystem::path targetFile;
-    // To obtain timestamp for sweeping.
-    std::filesystem::file_time_type timestamp;
+   	friend class boost::serialization::access;
+	// To target specific file in path.
+	std::filesystem::path targetFile;
+	// To obtain timestamp for sweeping.
+	std::chrono::system_clock::time_point timestamp;
+
+	template<class Archive>
+    void save(Archive & ar, const unsigned int version) const
+    {
+		ar& boost::serialization::base_object<Message>(*this);
+		// Save target file as a string
+        ar& targetFile.string();
+		// Save the timestamp as a time_t (long int)
+		ar& std::chrono::system_clock::to_time_t(timestamp);
+    }
+    template<class Archive>
+    void load(Archive & ar, const unsigned int version)
+    {
+		ar& boost::serialization::base_object<Message>(*this);
+
+		// Load target file as a string and then convert it
+		std::string tempFile;
+        ar& tempFile;
+		targetFile = tempFile;
+
+		// Load the timestamp as a time_t and then convert it
+		time_t tm;
+		ar& tm;
+		timestamp = std::chrono::system_clock::from_time_t(tm);
+    }
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
-// Inherited from message and track creation of file.
-struct FileCreate: FileMessage
+struct FileCreate : FileMessage
 {
-    std::string fCreate;   //File content created.
+	//File content created.
+	std::string fCreate;
+
+	template <typename Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar& boost::serialization::base_object<FileMessage>(*this);
+		ar& fCreate;
+	}
 };
 
-//Inherited from message and track all possible file changes.
-struct FileChange: FileMessage
+struct FileChange : FileMessage
 {
-    std::string fChange;  //File content changed.
+	//File content changed.
+	std::string fChange;
+
+
+	template <typename Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar& boost::serialization::base_object<FileMessage>(*this);
+		ar& fChange;
+	}
 };
 
-// Struct for disconnecting nodes.
-struct Disconnect: Message
+struct Disconnect : Message
 {
-    std::vector<uint64_t> disConList;             // Container if needed to keep track of nodes.
+	// Container if needed to keep track of nodes.
+	std::vector<uint64_t> disConList;
+	int size;
+
+	template <typename Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		size = disConList.size();
+		ar& boost::serialization::base_object<Message>(*this);
+		ar& disConList;
+	}
 };
 
-// Struct for connecting and keeping track of nodes.
-struct Connect: Message
+struct Connect : Message
 {
-    std::vector<uint64_t> connectList;           // Container to store all nodes connectee is aware of.
+	// Container to store all nodes connectee is aware of.
+	std::vector<uint64_t> connectList;
+	int size;
+
+	template <typename Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		size = connectList.size();
+		ar& boost::serialization::base_object<Message>(*this);
+		ar& connectList;
+	}
 };
-
-
-
-
-
-

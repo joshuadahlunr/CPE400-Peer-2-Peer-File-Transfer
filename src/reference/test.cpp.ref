@@ -1,4 +1,4 @@
-#include "serialize_message.hpp"
+#include "messages.hpp"
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
@@ -24,37 +24,38 @@ int main (void)
 	//create stringstream
 	std::stringstream ss;
 
-	/*
-#pragma region FileMessage Struct Test
-	//initialize struct and get file and timestamp
-	FileMessage myMessage;
-	myMessage.targetFile = "mytest.txt";
-	myMessage.timestamp = boost::posix_time::from_time_t(boost::filesystem::last_write_time("mytest.txt"));
+	
+// #pragma region FileMessage Struct Test
+// 	//initialize struct and get file and timestamp
+// 	FileMessage myMessage;
+// 	myMessage.targetFile = "mytest.txt";
+// 	myMessage.timestamp = std::chrono::system_clock::now();
 
 
-	//serialize and stream in
-	boost::archive::text_oarchive ao{ ss };
-	ao << myMessage;
-	//deserialize and stream out
-	boost::archive::text_iarchive ai(ss);
-	FileMessage newMessage;
-	ai >> newMessage;
-	//print message on other end
-	std::cout << newMessage.targetFile << " @ time " << newMessage.timestamp << std::endl;
+// 	//serialize and stream in
+// 	boost::archive::text_oarchive ao{ ss };
+// 	ao << myMessage;
+// 	//deserialize and stream out
+// 	boost::archive::text_iarchive ai(ss);
+// 	FileMessage newMessage;
+// 	ai >> newMessage;
+// 	//print message on other end
+// 	std::time_t ttp = to_time_t(newMessage.timestamp);
+// 	std::cout << newMessage.targetFile << " @ time " << std::ctime(&ttp) << std::endl;
 
-	//clear stream for next test
-	ss.str(std::string());
-#pragma endregion
+// 	//clear stream for next test
+// 	ss.str(std::string());
+// #pragma endregion
 
-*/
 
-	/*
+
+	
 #pragma region Message Struct Test
 
 	//Initialize struct and set flag and Uint_64
 	Message testMessage;
-	testMessage.flag = 0;
-	testMessage.originatorNode = 255255255255;
+	testMessage.type = Message::Type::payload;
+	testMessage.originatorNode = zt::IpAddress::ipv4FromString("127.0.0.1");
 
 	boost::archive::text_oarchive ao{ ss };
 	ao << testMessage;
@@ -63,10 +64,10 @@ int main (void)
 	Message newTestMessage;
 	ai >> newTestMessage;
 
-	std::cout << "flag: " << newTestMessage.flag << " & source: " << newTestMessage.originatorNode << std::endl;
+	std::cout << "flag: " << (int) newTestMessage.type << " & source: " << newTestMessage.originatorNode << std::endl;
 
 #pragma endregion
-	*/
+	
 
 	
 // #pragma region FileCreate struct test
