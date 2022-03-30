@@ -161,6 +161,11 @@ protected:
 		boost::archive::binary_iarchive ar(backing);
 
 		switch(type) {
+		break; case Message::Type::payload:{
+			PayloadMessage m;
+			ar >> m;
+			// TODO: Process payload
+		}
 		break; case Message::Type::lock:{
 			FileMessage m;
 			ar >> m;
@@ -187,12 +192,12 @@ protected:
 			// TODO: Process change
 		}
 		break; case Message::Type::connect:{
-			ConnectMessage m;
+			DisconnectConnectMessage m;
 			ar >> m;
 			// TODO: Process connect
 		}
 		break; case Message::Type::disconnect:{
-			DisconnectMessage m;
+			DisconnectConnectMessage m;
 			ar >> m;
 			// TODO: Process disconnect
 		}
