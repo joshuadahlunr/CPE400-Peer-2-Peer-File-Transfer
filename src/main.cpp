@@ -73,6 +73,7 @@ int main(int argc, char** argv) {
 
 	// Create a filesystem sweeper that scan the folders from command line, and repoerts its results to the onFile* functions in this file
 	FilesystemSweeper sweeper{folders, onFileCreated, onFileModified, onFileDeleted};
+	sweeper.setup();
 	sweeper.sweep(/*total*/ true);
 
 

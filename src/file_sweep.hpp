@@ -6,6 +6,19 @@
 #include <vector>
 #include <boost/predef.h>
 
+#include "include_everywhere.hpp"
+
+// Function which calculates the same path but in the .wnts folder
+inline std::filesystem::path wntsPath(const std::filesystem::path& path){
+	auto i = path.begin();
+	std::filesystem::path wntsPath = *i++;
+	wntsPath /= ".wnts";
+	for(; i != path.end(); i++)
+		wntsPath /= *i;
+	return wntsPath;
+}
+
+
 // Class which sweeps the provided folder structure every time its sweep function is called
 // There is a fast track optimization, where a recently modified subset of files is sweept every call, or a total sweep scanning all of the folders can be preformed
 struct FilesystemSweeper {
@@ -29,6 +42,43 @@ struct FilesystemSweeper {
 	size_t iteration = 0;
 
 
+	// Function which fills an array with paths to all of the files we are responsible for sweaping.
+	void enumerateAllPaths(std::vector<std::filesystem::path>& paths) {
+		// Recursively add all files in the managed folders
+		for(auto& path: folders)
+			for (std::filesystem::recursive_directory_iterator i(path), end; i != end; ++i)
+				if (!is_directory(i->path())) {
+					// Ignore any paths containing .wnts in their folder tree
+					bool good = true;
+					for(auto folder: i->path())
+						if(folder.string() == ".wnts"){
+							good = false;
+							break;
+						}
+					if(good) paths.push_back(i->path());
+				}
+	}
+
+	// Function which sets up the file sweaper
+	void setup() {
+		// Remove all of the .wnts folders
+		for(auto& folder: folders)
+			remove_all(folder / ".wnts");
+
+		// Paths to the files this sweep should scan
+		std::vector<std::filesystem::path> paths;
+		enumerateAllPaths(paths);
+
+		// TODO: As part of the setup process we need to get all of the files from the network
+
+		// Copy all of the files into the .wnts folder
+		for(auto& path: paths) {
+			auto wnts = wntsPath(path);
+			create_directories(wnts.remove_filename());
+			copy(path, wnts, std::filesystem::copy_options::update_existing);
+		}
+	}
+
 	// Function which calls sweep, automatically preforming a total sweep every <n> iterations
 	// Behind the scenes it scans the file system and reports (via callback functions) all of the changed, modified, and deleted files
 	void totalSweepEveryN(size_t n) {
@@ -36,25 +86,22 @@ struct FilesystemSweeper {
 	}
 
 	// Function which scans the file system and reports (via callback functions) all of the changed, modified, and deleted files
-	inline void sweep(bool total = false) {
+	void sweep(bool total = false) {
 		// Paths to the files this sweep should scan
 		std::vector<std::filesystem::path> paths;
 		// Pointer to the appropriate timestamp map (default total sweep map)
 		auto* timestamps = &this->timestamps;
 
-		// If we are doing a total sweep, recursively add all of the files to <paths>
-		if(total) {
-			for(auto& path: folders)
-				for (std::filesystem::recursive_directory_iterator i(path), end; i != end; ++i)
-					if (!is_directory(i->path())) 
-						paths.push_back(i->path());
+		// If we are doing a total sweep, recursively add all of the files to <paths> (except those in the .wnts folder)
+		if(total)
+			enumerateAllPaths(paths);
 		// If we are doing a fasttrack sweep, update the timestamp map point and add all of the current fasttrack files to <paths>
-		} else {
+		else {
 			for (auto& [path, _]: fastTrackTimestamps)
 				paths.push_back(path);
 			timestamps = &fastTrackTimestamps;
 		}
-		
+
 		// Variables tracking paths that have been deleted or that should be removed from the fast track (haven't been modiifed recently)
 		std::vector<std::filesystem::path> removedFiles, fastTrackRemovedFiles;
 
