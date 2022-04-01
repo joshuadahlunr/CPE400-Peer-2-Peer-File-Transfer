@@ -56,13 +56,24 @@ int main(int argc, char** argv) {
 	}
 
 
-	// Establish our connection to ZeroTier
-	ZeroTierNode::singleton().setup();
+	// Setup the networking components in a thread (it takes a while so we also tidy up the filesystem at the same time)
+	std::thread networkSetupThread([port]{
+		// Establish our connection to ZeroTier
+		ZeroTierNode::singleton().setup();
+
+		// Initialize the PeerManager singleton (starts listening for connections)
+		PeerManager::singleton().setup(ZeroTierNode::singleton().getIP(), port);
+	});
+
+	// Create a filesystem sweeper that scan the folders from command line, and repoerts its results to the onFile* functions in this file
+	FilesystemSweeper sweeper{folders, onFileCreated, onFileModified, onFileDeleted};
+	sweeper.setup();
+
+	// Wait for the node setup to finish
+	networkSetupThread.join();
 	std::cout << "\nConnection IP: >> " << ZeroTierNode::singleton().getIP() << " <<\n" << std::endl;
 
 
-	// Initialize the PeerManager singleton (starts listening for connections)
-	PeerManager::singleton().setup(ZeroTierNode::singleton().getIP(), port);
 	// Acquire a reference to the list of peers
 	auto& peers = PeerManager::singleton().getPeers();
 
@@ -70,10 +81,7 @@ int main(int argc, char** argv) {
 	if(remoteIP.isValid())
 		peers->emplace_back(std::move(Peer::connect(remoteIP, port)));
 
-
-	// Create a filesystem sweeper that scan the folders from command line, and repoerts its results to the onFile* functions in this file
-	FilesystemSweeper sweeper{folders, onFileCreated, onFileModified, onFileDeleted};
-	sweeper.setup();
+	// Sweep for the first time then start the main loop
 	sweeper.sweep(/*total*/ true);
 
 
