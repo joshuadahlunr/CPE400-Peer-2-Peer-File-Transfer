@@ -6,6 +6,8 @@
 */
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/base_object.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
 #include <filesystem>
 
 
@@ -62,7 +64,7 @@ struct FileMessage : Message
     BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
-struct FileCreate : FileMessage
+struct FileCreateMessage : FileMessage
 {
 	//File content created.
 	std::string fCreate;
@@ -75,7 +77,7 @@ struct FileCreate : FileMessage
 	}
 };
 
-struct FileChange : FileMessage
+struct FileChangeMessage : FileMessage
 {
 	//File content changed.
 	std::string fChange;
@@ -89,22 +91,7 @@ struct FileChange : FileMessage
 	}
 };
 
-struct Disconnect : Message
-{
-	// Container if needed to keep track of nodes.
-	std::vector<uint64_t> disConList;
-	int size;
-
-	template <typename Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
-		size = disConList.size();
-		ar& boost::serialization::base_object<Message>(*this);
-		ar& disConList;
-	}
-};
-
-struct Connect : Message
+struct ConnectMessage : Message
 {
 	// Container to store all nodes connectee is aware of.
 	std::vector<uint64_t> connectList;
@@ -116,5 +103,20 @@ struct Connect : Message
 		size = connectList.size();
 		ar& boost::serialization::base_object<Message>(*this);
 		ar& connectList;
+	}
+};
+
+struct DisconnectMessage : Message
+{
+	// Container if needed to keep track of nodes.
+	std::vector<uint64_t> disConList;
+	int size;
+
+	template <typename Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		size = disConList.size();
+		ar& boost::serialization::base_object<Message>(*this);
+		ar& disConList;
 	}
 };

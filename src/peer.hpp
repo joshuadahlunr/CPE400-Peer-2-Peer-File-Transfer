@@ -3,6 +3,7 @@
 
 #include <jthread.hpp>
 #include <cstring>
+#include "messages.hpp"
 #include "networking_include_everywhere.hpp"
 
 // Class representing a connection to another Peer on the network, it wraps a TCP socket and listening thread
@@ -122,7 +123,7 @@ protected:
 						// Once we have read <dataSize> bytes...
 						if(dataReceived >= dataSize) {
 							// Process the message
-							processMessage(dataSize);
+							processMessage({buffer.data(), dataSize});
 
 							// If there is extra data in the buffer, move it to the front
 							if(dataReceived > 0) memmove(bufferMem, bufferMem + dataSize, buffer.size() - dataSize); // TODO: Needed?
@@ -151,8 +152,53 @@ protected:
 	}
 
 	// Function that processes a message
-	void processMessage(size_t dataSize) {
-		std::cout << "Received " << dataSize << " bytes:\n" << (char*) buffer.data() << std::endl;
+	void processMessage(std::span<std::byte> data) {
+		std::cout << "Received " << data.size() << " bytes:\n" << (char*) data.data() << std::endl;
+
+
+		Message::Type type = (Message::Type) buffer[0];
+		std::stringstream backing((char*) data.data());
+		boost::archive::binary_iarchive ar(backing);
+
+		switch(type) {
+		break; case Message::Type::lock:{
+			FileMessage m;
+			ar >> m;
+			// TODO: Process lock
+		}
+		break; case Message::Type::unlock:{
+			FileMessage m;
+			ar >> m;
+			// TODO: Process unlock
+		}
+		break; case Message::Type::deleteFile:{
+			FileMessage m;
+			ar >> m;
+			// TODO: Process delete
+		}
+		break; case Message::Type::create:{
+			FileCreateMessage m;
+			ar >> m;
+			// TODO: Process create
+		}
+		break; case Message::Type::change:{
+			FileChangeMessage m;
+			ar >> m;
+			// TODO: Process change
+		}
+		break; case Message::Type::connect:{
+			ConnectMessage m;
+			ar >> m;
+			// TODO: Process connect
+		}
+		break; case Message::Type::disconnect:{
+			DisconnectMessage m;
+			ar >> m;
+			// TODO: Process disconnect
+		}
+		break; default:
+			throw std::runtime_error("Unrecognized message type");
+		}
 	}
 };
 
