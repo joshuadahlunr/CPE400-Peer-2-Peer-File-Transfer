@@ -5,6 +5,9 @@
 #include "monitor.hpp"
 #include "ztnode.hpp"
 
+#include <lockfree_skiplist_priority_queue.h>
+#include "messages.hpp"
+
 #include "networking_include_everywhere.hpp"
 
 // Singleton class representing a list of peers, it runs a listening thread which automatically detects connecting peers
@@ -17,6 +20,10 @@ class PeerManager {
 	std::jthread listeningThread;
 	// List of peers (guarded by a monitor, access to this object ges through a mutex)
 	monitor<std::vector<Peer>> peers;
+
+	// Queue of messages waiting to be processed (It is a non-blocking [skiplist based] concurrent queue)
+	// NOTE: Lower priorities = faster execution
+	mutable skipListQueue<std::unique_ptr<Message>> messageQueue;
 
 public:
 	// Function which gets the PeerManager singleton
@@ -77,7 +84,68 @@ public:
 			broadcastToSelf ? zt::IpAddress::ipv6Unspecified() : zt::IpAddress::ipv6Loopback());
 	}
 
-	// Function which getts a reference to the array of peers
+	// Function that processes the next message currently in the message queue
+	//	(or waits 1/10 of a second if there is nothing in the queue)
+	void processNextMessage(){
+		auto min = messageQueue.findMin();
+		// If the queue is empty, sleep for 100ms
+		if(min == nullptr) {
+			std::this_thread::sleep_for(100ms);
+			return;
+		}
+
+		// Save the message and remove the node from the queue
+		std::unique_ptr<Message> msgPtr = std::move(min->value);
+		messageQueue.removeMin();
+
+
+		// Deserialize the message as the same type of message that was delivered
+		switch(msgPtr->type) {
+		break; case Message::Type::payload:{
+			auto& m = reference_cast<PayloadMessage>(*msgPtr);
+			std::cout << "[" << m.originatorNode << "][payload]:\n" << m.payload << std::endl;
+		}
+		break; case Message::Type::lock:{
+			auto& m = reference_cast<FileMessage>(*msgPtr);
+			std::cout << "lock message" << std::endl;
+			// TODO: Process lock
+		}
+		break; case Message::Type::unlock:{
+			auto& m = reference_cast<FileMessage>(*msgPtr);
+			std::cout << "unlock message" << std::endl;
+			// TODO: Process unlock
+		}
+		break; case Message::Type::deleteFile:{
+			auto& m = reference_cast<FileMessage>(*msgPtr);
+			std::cout << "delete message" << std::endl;
+			// TODO: Process delete
+		}
+		break; case Message::Type::create:{
+			auto& m = reference_cast<FileCreateMessage>(*msgPtr);
+			std::cout << "create message" << std::endl;
+			// TODO: Process create
+		}
+		break; case Message::Type::change:{
+			auto& m = reference_cast<FileChangeMessage>(*msgPtr);
+			std::cout << "change message" << std::endl;
+			// TODO: Process change
+		}
+		break; case Message::Type::connect:{
+			auto& m = reference_cast<DisconnectConnectMessage>(*msgPtr);
+			std::cout << "connect message" << std::endl;
+			// TODO: Process connect
+		}
+		break; case Message::Type::disconnect:{
+			auto& m = reference_cast<DisconnectConnectMessage>(*msgPtr);
+			std::cout << "disconnect message" << std::endl;
+			// TODO: Process disconnect
+		}
+		break; default:
+			throw std::runtime_error("Unrecognized message type");
+		}
+	}
+
+	// Function which gets a reference to the array of peers
 	monitor<std::vector<Peer>>& getPeers() { return peers; }
 
 private:
@@ -125,7 +193,7 @@ private:
 	}
 
 
-	// Function that deserializes a message received from the network in preparation for execution
+	// Function that deserializes a message received from the network and adds it to the message queue
 	void deserializeMessage(const std::span<std::byte> data) const {
 		// Extract the type of message
 		Message::Type type = (Message::Type) uint8_t(data[10]);
@@ -134,54 +202,55 @@ private:
 		boost::archive::binary_iarchive ar(backing, boost::archive::no_header);
 
 
-		// Deserialize the message as the same type of message that was delivered
+		// Deserialize the message as the same type of message that was delivered and add it to the message queue
 		switch(type) {
 		break; case Message::Type::payload:{
-			PayloadMessage m;
-			ar >> m;
-			std::cout << "[" << m.originatorNode << "][payload]:\n" << m.payload << std::endl;
+			auto m = std::make_unique<PayloadMessage>();
+			ar >> *m;
+			// Payloads have a low priority
+			messageQueue.insert(10, std::move(m));
 		}
 		break; case Message::Type::lock:{
-			FileMessage m;
-			ar >> m;
-			std::cout << "lock message" << std::endl;
-			// TODO: Process lock
+			auto m = std::make_unique<FileMessage>();
+			ar >> *m;
+			// File messages have priority 5
+			messageQueue.insert(5, std::move(m));
 		}
 		break; case Message::Type::unlock:{
-			FileMessage m;
-			ar >> m;
-			std::cout << "unlock message" << std::endl;
-			// TODO: Process unlock
+			auto m = std::make_unique<FileMessage>();
+			ar >> *m;
+			// File messages have priority 5
+			messageQueue.insert(5, std::move(m));
 		}
 		break; case Message::Type::deleteFile:{
-			FileMessage m;
-			ar >> m;
-			std::cout << "delete message" << std::endl;
-			// TODO: Process delete
+			auto m = std::make_unique<FileMessage>();
+			ar >> *m;
+			// File messages have priority 5
+			messageQueue.insert(5, std::move(m));
 		}
 		break; case Message::Type::create:{
-			FileCreateMessage m;
-			ar >> m;
-			std::cout << "create message" << std::endl;
-			// TODO: Process create
+			auto m = std::make_unique<FileCreateMessage>();
+			ar >> *m;
+			// File messages have priority 5
+			messageQueue.insert(5, std::move(m));
 		}
 		break; case Message::Type::change:{
-			FileChangeMessage m;
-			ar >> m;
-			std::cout << "change message" << std::endl;
-			// TODO: Process change
+			auto m = std::make_unique<FileChangeMessage>();
+			ar >> *m;
+			// File messages have priority 5
+			messageQueue.insert(5, std::move(m));
 		}
 		break; case Message::Type::connect:{
-			DisconnectConnectMessage m;
-			ar >> m;
-			std::cout << "connect message" << std::endl;
-			// TODO: Process connect
+			auto m = std::make_unique<DisconnectConnectMessage>();
+			ar >> *m;
+			// Connect has highest priority
+			messageQueue.insert(1, std::move(m));
 		}
 		break; case Message::Type::disconnect:{
-			DisconnectConnectMessage m;
-			ar >> m;
-			std::cout << "disconnect message" << std::endl;
-			// TODO: Process disconnect
+			auto m = std::make_unique<DisconnectConnectMessage>();
+			ar >> *m;
+			// Disconnect is processed after disconnect
+			messageQueue.insert(2, std::move(m));
 		}
 		break; default:
 			throw std::runtime_error("Unrecognized message type");

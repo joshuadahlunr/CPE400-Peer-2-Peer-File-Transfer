@@ -81,11 +81,13 @@ int main(int argc, char** argv) {
 	if(remoteIP.isValid())
 		peers->emplace_back(std::move(Peer::connect(remoteIP, port)));
 
+
 	// Sweep for the first time then start the main loop
 	sweeper.sweep(/*total*/ true);
-
-
 	while(true) {
+		// Note the time this loop iteration starts
+		auto start = std::chrono::system_clock::now();
+
 		// Generate a message with an arbitrary payload
 		PayloadMessage m;
 		m.type = Message::Type::payload;
@@ -97,7 +99,9 @@ int main(int argc, char** argv) {
 		// Sweep the file system, with a total sweep every 10 iterations (10 seconds)
 		sweeper.totalSweepEveryN(10);
 
-		std::this_thread::sleep_for(1s);
+		// Process messages until a second has elapsed since the start of the loop
+		while(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start).count() < 1000)
+			PeerManager::singleton().processNextMessage();
 	}
 
 	return 0;

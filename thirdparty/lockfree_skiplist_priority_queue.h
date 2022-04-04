@@ -1,3 +1,6 @@
+#ifndef __LOCKFREE_SKIPLIST_PRIORITY_QUEUE__
+#define __LOCKFREE_SKIPLIST_PRIORITY_QUEUE__
+
 #include <iostream>
 #include <vector>
 #include <atomic>
@@ -7,9 +10,9 @@
 
 // Code from: https://github.com/bhavanajain/concurrent-priority-queues
 
-int maxHeight;
+static int maxHeight;
 
-void setMaxHeight(int h)
+inline void setMaxHeight(int h)
 {
 	maxHeight = h;
 }
@@ -17,9 +20,9 @@ void setMaxHeight(int h)
 /*
  * Random level numbers should be generated according to geometric distribution.
  */
-std::default_random_engine generator(time(NULL));
-std::geometric_distribution<int> distribution(0.5);
-int getRandomLevel()
+static std::default_random_engine generator(time(NULL));
+static std::geometric_distribution<int> distribution(0.5);
+inline int getRandomLevel()
 {
 	int temp = distribution(generator) + 1;
 	if(temp < maxHeight)
@@ -141,10 +144,10 @@ template<class X> struct skipListNode
 			topLevel = maxHeight;
 		}
 
-		skipListNode(int priority, X value, int height = maxHeight)
+		skipListNode(int priority, X&& value, int height = maxHeight)
 		{
 			this->priority = priority;
-			this->value = value;
+			this->value = std::move(value);
 			next = std::vector<atomicMarkableReference<skipListNode<X>>>(height + 1);
 			deleted = false;
 			topLevel = height;
@@ -239,7 +242,7 @@ template<class X> class skipListQueue
 		 * The priorities are unique and we don't insert in case of duplicate addition. 
 		 * Hence, it returns true in case of successful addition and false otherwise.
 		 */
-		bool insert(int priority, X element = 0)
+		bool insert(int priority, X&& element = 0)
 		{
 			int maxLevel = getRandomLevel();
 			int bottomLevel = 0;
@@ -252,7 +255,7 @@ template<class X> class skipListQueue
 					return false;
 				}
 				
-				skipListNode<X> *newNode = new skipListNode<X>(priority, element, maxLevel);
+				skipListNode<X> *newNode = new skipListNode<X>(priority, std::move(element), maxLevel);
 				for(int i = bottomLevel; i <= maxLevel; i++)
 				{
 					newNode->next[i].set(succs[i], false);
@@ -283,6 +286,30 @@ template<class X> class skipListQueue
 				}
 				return true;
 			}
+		}
+
+		/*
+		* findMin returns a pointer to the first undeleted node.
+		* It traverses the bottom level and checks if the deleted field of curr node is true.
+		* If so, then move to the next node.
+		*/
+		skipListNode<X>* findMin() 
+		{
+			skipListNode<X> *curr = NULL;
+			skipListNode<X> *succ = NULL;
+			curr = head->next[0].getReference();
+			while(curr != tail)
+			{
+				if(!curr->deleted.load())
+				{
+					return curr;
+				}
+				else 
+				{
+					curr = curr->next[0].getReference();
+				}
+			}
+			return NULL;
 		}
 
 		/*
@@ -385,3 +412,5 @@ template<class X> class skipListQueue
 			}
 		}
 };
+
+#endif // __LOCKFREE_SKIPLIST_PRIORITY_QUEUE__
