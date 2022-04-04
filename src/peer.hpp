@@ -4,6 +4,7 @@
 #include <jthread.hpp>
 #include <cstring>
 #include "messages.hpp"
+
 #include "networking_include_everywhere.hpp"
 
 // Class representing a connection to another Peer on the network, it wraps a TCP socket and listening thread
@@ -12,6 +13,10 @@ class Peer {
 	zt::Socket socket;
 	// Listening thread
 	std::jthread listeningThread;
+
+	// Cached IP address and port of the remote peer
+	mutable zt::IpAddress remoteIP;
+	mutable uint16_t remotePort = -1;
 
 	// Buffer we receive data in
 	std::vector<std::byte> buffer = std::vector<std::byte>{30, {}};
@@ -66,13 +71,31 @@ public:
 
 	// Return a const reference to the managed socket
 	const zt::Socket& getSocket() const { return socket; }
+	// Return the IP address of this peer (with caching)
+	zt::IpAddress getRemoteIP() const {
+		if(!remoteIP.isValid()) {
+			auto res = socket.getRemoteIpAddress();
+			ZTCPP_THROW_ON_ERROR(res, ZTError);
+			remoteIP = *res;
+		}
+		return remoteIP;
+	}
+	// Return the Port of this peer (with caching)
+	uint16_t getRemotePort() const {
+		if(remotePort == std::numeric_limits<uint16_t>::max()) {
+			auto res = socket.getRemotePort();
+			ZTCPP_THROW_ON_ERROR(res, ZTError);
+			remotePort = *res;
+		}
+		return remotePort;
+	}
 
 	// Send some data to to the connected peer
 	void send(const void* data, uint64_t size) const {
 		zt::Socket& socket = reference_cast<zt::Socket>(this->socket);
 		// Before we send data, we send the size of the data
 		socket.send(&size, sizeof(size));
-		socket.send(data, size); 
+		socket.send(data, size);
 	}
 
 protected:
@@ -90,7 +113,7 @@ protected:
 				// Wait upto 100ms for data
 				auto pollres = socket.pollEvents(zt::PollEventBitmask::ReadyToReceiveAny, 100ms);
 				ZTCPP_THROW_ON_ERROR(pollres, ZTError);
-		
+
 				// If there is data ready to be received...
 				if((*pollres & zt::PollEventBitmask::ReadyToReceiveAny) != 0) {
 					// Get a pointer to the buffer's memory
@@ -144,7 +167,7 @@ protected:
 					// TODO: Remove from list of peers
 					return;
 				}
-					
+
 				// TODO: This is where we would need to handle a loss of connection
 				std::cerr << "[ZT][Error] " << error << std::endl;
 			}
@@ -152,59 +175,7 @@ protected:
 	}
 
 	// Function that processes a message
-	void processMessage(std::span<std::byte> data) {
-		std::cout << "Received " << data.size() << " bytes:\n" << (char*) data.data() << std::endl;
-
-
-		Message::Type type = (Message::Type) buffer[0];
-		std::stringstream backing((char*) data.data());
-		boost::archive::binary_iarchive ar(backing);
-
-		switch(type) {
-		break; case Message::Type::payload:{
-			PayloadMessage m;
-			ar >> m;
-			// TODO: Process payload
-		}
-		break; case Message::Type::lock:{
-			FileMessage m;
-			ar >> m;
-			// TODO: Process lock
-		}
-		break; case Message::Type::unlock:{
-			FileMessage m;
-			ar >> m;
-			// TODO: Process unlock
-		}
-		break; case Message::Type::deleteFile:{
-			FileMessage m;
-			ar >> m;
-			// TODO: Process delete
-		}
-		break; case Message::Type::create:{
-			FileCreateMessage m;
-			ar >> m;
-			// TODO: Process create
-		}
-		break; case Message::Type::change:{
-			FileChangeMessage m;
-			ar >> m;
-			// TODO: Process change
-		}
-		break; case Message::Type::connect:{
-			DisconnectConnectMessage m;
-			ar >> m;
-			// TODO: Process connect
-		}
-		break; case Message::Type::disconnect:{
-			DisconnectConnectMessage m;
-			ar >> m;
-			// TODO: Process disconnect
-		}
-		break; default:
-			throw std::runtime_error("Unrecognized message type");
-		}
-	}
+	void processMessage(std::span<std::byte> data);
 };
 
 #endif // __PEER_HPP__

@@ -62,7 +62,7 @@ struct Message
 	// IP of the destination (may be unspecified to broadcast) node
 	zt::IpAddress receiverNode;
 	// IP of the source of the previous hop.
-	zt::IpAddress senderNode;
+	zt::IpAddress senderNode = zt::IpAddress::ipv6Unspecified(); // NOTE: Not serialized
 	// IP of the originator node (original source of the message)
 	zt::IpAddress originatorNode;
 
@@ -70,6 +70,7 @@ struct Message
 	void serialize(Archive& ar, const unsigned int version)
 	{
 		ar& reference_cast<uint8_t>(type);
+		ar& receiverNode;
 		ar& originatorNode;
 	}
 };
@@ -77,7 +78,7 @@ struct Message
 struct PayloadMessage : Message {
 	friend class boost::serialization::access;
 	// Arbitrary data this message carries as a payload
-	std::vector<std::byte> payload;
+	std::string payload;
 
 	template <typename Archive>
 	void serialize(Archive& ar, const unsigned int version)

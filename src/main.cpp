@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 		std::cout << applyDiff(a, diff) << std::endl; // Converts a to "Hello Barb!"
 		std::cout << undoDiff(b, diff) << std::endl; // Converts b to "Hello Bob!"
 	}
-	
+
 
 	// Establish our connection to ZeroTier
 	ZeroTierNode::singleton().setup();
@@ -75,17 +75,15 @@ int main(int argc, char** argv) {
 	FilesystemSweeper sweeper{folders, onFileCreated, onFileModified, onFileDeleted};
 	sweeper.sweep(/*total*/ true);
 
+
 	while(true) {
+		// Generate a message with an arbitrary payload
+		PayloadMessage m;
+		m.type = Message::Type::payload;
 		std::time_t now = std::time(nullptr);
-		std::string message = std::to_string(sweeper.iteration) + std::asctime(std::localtime(&now));
-
-		{
-			auto peersLock = peers.read_lock();
-			for(auto& peer: *peersLock)
-				peer.send(message.c_str(), message.size());
-
-			if(!peersLock->empty()) std::cout << "Sent " << message << std::flush;
-		}
+		m.payload = std::to_string(sweeper.iteration) + std::asctime(std::localtime(&now));
+		// Send the payload message
+		PeerManager::singleton().send(m);
 
 		// Sweep the file system, with a total sweep every 10 iterations (10 seconds)
 		sweeper.totalSweepEveryN(10);
