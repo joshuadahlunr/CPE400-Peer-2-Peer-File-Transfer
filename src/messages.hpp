@@ -65,7 +65,7 @@ struct Message
 	// IP of the source of the previous hop.
 	zt::IpAddress senderNode = zt::IpAddress::ipv6Unspecified(); // NOTE: Not serialized
 	// IP of the originator node (original source of the message)
-	zt::IpAddress originatorNode;
+	zt::IpAddress originatorNode = zt::IpAddress::ipv6Unspecified();
 
 	template <typename Archive>
 	void serialize(Archive& ar, const unsigned int version)
@@ -75,6 +75,8 @@ struct Message
 		ar& originatorNode;
 	}
 };
+// Disconnect and link-lost messages use the originator node to mark the node that the network can no longer see.
+
 
 struct PayloadMessage : Message {
 	friend class boost::serialization::access;
@@ -160,19 +162,6 @@ struct ConnectMessage : Message {
 	{
 		ar& boost::serialization::base_object<Message>(*this);
 		ar& backupPeers;
-	}
-};
-
-struct DisconnectConnectMessage : Message
-{
-	// Container to store all nodes connectee is aware of.
-	std::vector<zt::IpAddress> connectList;
-
-	template <typename Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
-		ar& boost::serialization::base_object<Message>(*this);
-		ar& connectList;
 	}
 };
 

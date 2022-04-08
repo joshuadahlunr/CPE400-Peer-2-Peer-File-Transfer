@@ -90,11 +90,12 @@ public:
 
 	// Function which sends a payload message to the specified <destination>
 	// NOTE: By default the address is unspecififed which is taken to mean everyone
-	template<typename Message>
-	void send(Message msg, zt::IpAddress destination = zt::IpAddress::ipv6Unspecified(), bool broadcastToSelf = true) const {
+	template<typename MSG>
+	void send(MSG msg, zt::IpAddress destination = zt::IpAddress::ipv6Unspecified(), bool broadcastToSelf = true) const {
 		// Add routing information to the message
 		msg.receiverNode = destination;
-		msg.senderNode = msg.originatorNode = ZeroTierNode::singleton().getIP();
+		msg.senderNode = ZeroTierNode::singleton().getIP();
+		if(msg.originatorNode == zt::IpAddress::ipv6Unspecified()) msg.originatorNode = msg.senderNode;
 
 		// Serialize the data
 		std::stringstream stream;
@@ -162,9 +163,17 @@ public:
 			// TODO: delete managed data and prepare for data syncs
 		}
 		break; case Message::Type::disconnect:{
-			auto& m = reference_cast<DisconnectConnectMessage>(*msgPtr);
+			auto& m = reference_cast<Message>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] disconnect message" << std::endl;
-			// TODO: Process disconnect
+			
+			// Remove the Peer as a backup Peer
+			for(size_t peer = 0; peer < backupPeers.size(); peer++) {
+				auto& [backupIP, _] = backupPeers[peer];
+				if(backupIP == m.originatorNode)
+					backupPeers.erase(backupPeers.begin() + peer);
+			}
+
+			// TODO: free any locks held by the peer
 		}
 		break; case Message::Type::linkLost:{
 			auto& m = reference_cast<Message>(*msgPtr);
@@ -207,7 +216,12 @@ public:
 				}
 			}
 
-			// TODO: Notify the rest of the network that a peer disconnected
+			// Notify the rest of the network that a Peer disconnected
+			if(removedIP.isValid()) {
+				Message m;
+				m.type = Message::Type::disconnect;
+				m.originatorNode = removedIP;
+				send(m); // The write lock has to be released before we send
 			}
 		}
 		break; default:
@@ -322,7 +336,7 @@ private:
 			messageQueue.insert(1, std::move(m));
 		}
 		break; case Message::Type::disconnect:{
-			auto m = std::make_unique<DisconnectConnectMessage>();
+			auto m = std::make_unique<Message>();
 			ar >> *m;
 			// Disconnect is processed after disconnect
 			messageQueue.insert(2, std::move(m));
