@@ -5,6 +5,7 @@
 
 #include "include_everywhere.hpp"
 #include <ZTCpp.hpp>
+#include <boost/archive/binary_oarchive.hpp>
 
 namespace zt = jbatnozic::ztcpp;
 
@@ -21,5 +22,8 @@ constexpr uint16_t ztServicePort = 9994;
 
 // Default port for the network to operate over
 constexpr uint16_t defaultPort = 12345;
+
+// Default flags for all archives
+constexpr auto archiveFlags = boost::archive::no_header | boost::archive::no_tracking;
 
 #endif // __NETWORKING_HPP__

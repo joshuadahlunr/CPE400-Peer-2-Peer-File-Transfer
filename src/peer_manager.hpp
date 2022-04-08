@@ -76,7 +76,7 @@ public:
 
 		// Serialize the data
 		std::stringstream stream;
-		boost::archive::binary_oarchive ar(stream, boost::archive::no_header);
+		boost::archive::binary_oarchive ar(stream, archiveFlags);
 		ar << msg;
 
 		// Forward the data (based on the added routing information)
@@ -197,9 +197,10 @@ private:
 	void deserializeMessage(const std::span<std::byte> data) const {
 		// Extract the type of message
 		Message::Type type = (Message::Type) uint8_t(data[10]);
+		if((uint8_t)type == 0) type = (Message::Type) uint8_t(data[5]);
 		// Copy the data into a deserialization buffer
 		std::stringstream backing({(char*) data.data(), data.size()});
-		boost::archive::binary_iarchive ar(backing, boost::archive::no_header);
+		boost::archive::binary_iarchive ar(backing, archiveFlags);
 
 
 		// Deserialize the message as the same type of message that was delivered and add it to the message queue
