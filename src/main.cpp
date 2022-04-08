@@ -34,17 +34,25 @@ int main(int argc, char** argv) {
 	signal(SIGINT, signalCallbackHandler);
 
 	// Parse the command line
-	const argos::ParsedArguments args = argos::ArgumentParser(argv[0])
-        .about("Command line utility that syncsronizes a filesystem across a peer-2-peer network.")
-		.add(argos::Argument("FOLDER").help("The folder/directory to be synchronized across the network."))
-        .add(argos::Argument("IP").optional(true)
-            .help("IP address of a peer on the network we wish to join. (If not set, a new network is established)"))
-        .add(argos::Option{"-p", "--port"}.argument("PORT")
+	#define COMMAND_LINE_ARGS argos::ArgumentParser(argv[0])\
+        .about("Command line utility that syncsronizes a filesystem across a peer-2-peer network.")\
+		.add(argos::Argument("FOLDER").help("The folder/directory to be synchronized across the network."))\
+        .add(argos::Argument("IP").optional(true)\
+            .help("IP address of a peer on the network we wish to join. (If not set, a new network is established)"))\
+        .add(argos::Option{"-p", "--port"}.argument("PORT")\
             .help("Optional port number to connect to (default=" + std::to_string(defaultPort) + ")"))
-        .parse(argc, argv);
+	const argos::ParsedArguments args = COMMAND_LINE_ARGS.parse(argc, argv);
 	uint16_t port = args.value("-p").as_uint(defaultPort);
 	auto remoteIP = zt::IpAddress::ipv6FromString(args.value("IP").as_string());
 	std::vector<std::filesystem::path> folders; boost::split(folders, args.value("FOLDER").as_string(), boost::is_any_of(","));
+
+	// If any of the specified folders don't exist... error
+	for(auto& path: folders)
+		if(!exists(path)) {
+			std::cerr << "wnts: Target folder: " << path << " doesn't exist!" << std::endl;
+			// Display the usage
+			auto _ = COMMAND_LINE_ARGS.parse(1, argv);
+		}
 
 
 	{
