@@ -11,6 +11,7 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/utility.hpp>
 #include <filesystem>
 
 
@@ -147,6 +148,18 @@ struct FileChangeMessage : FileMessage
 	{
 		ar& boost::serialization::base_object<FileMessage>(*this);
 		ar& fChange;
+	}
+};
+
+struct ConnectMessage : Message {
+	// List containing backup IPs 
+	std::vector<std::pair<zt::IpAddress, uint16_t>> backupPeers;
+
+	template <typename Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar& boost::serialization::base_object<Message>(*this);
+		ar& backupPeers;
 	}
 };
 

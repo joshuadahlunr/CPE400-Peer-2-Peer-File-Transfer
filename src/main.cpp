@@ -78,8 +78,10 @@ int main(int argc, char** argv) {
 	auto& peers = PeerManager::singleton().getPeers();
 
 	// If we have a peer to connect to from the command line, add them to our list of peers
-	if(remoteIP.isValid())
+	if(remoteIP.isValid()) {
 		peers->emplace_back(std::move(Peer::connect(remoteIP, port)));
+		PeerManager::singleton().setGatewayIP(remoteIP); // Mark the remote IP as our "gateway" to the rest of the network
+	}
 
 
 	// Sweep for the first time then start the main loop
@@ -94,7 +96,7 @@ int main(int argc, char** argv) {
 		std::time_t now = std::time(nullptr);
 		m.payload = std::to_string(sweeper.iteration) + std::asctime(std::localtime(&now));
 		// Send the payload message
-		PeerManager::singleton().send(m);
+		// PeerManager::singleton().send(m);
 
 		// Sweep the file system, with a total sweep every 10 iterations (10 seconds)
 		sweeper.totalSweepEveryN(10);

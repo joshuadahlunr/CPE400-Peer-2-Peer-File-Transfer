@@ -25,6 +25,11 @@ class PeerManager {
 	// NOTE: Lower priorities = faster execution
 	mutable skipListQueue<std::unique_ptr<Message>> messageQueue;
 
+	// The IP address of the Peer which provides connectivity to the rest of the network
+	zt::IpAddress gatewayIP = zt::IpAddress::ipv6Unspecified();
+	// List of IP address we can replace the gatewayIP with should the gatewayIP go offline
+	std::vector<std::pair<zt::IpAddress, uint16_t>> backupPeers;
+
 public:
 	// Function which gets the PeerManager singleton
 	static PeerManager& singleton() {
@@ -52,12 +57,29 @@ public:
 				if((*pollres & zt::PollEventBitmask::ReadyToReceiveAny) != 0) {
 					auto sock = connectionSocket.accept();
 					ZTCPP_THROW_ON_ERROR(sock, ZTError);
-					peers->emplace_back(std::move(*sock));
 
-					std::cout << "Accepted Connection" << std::endl;
-					auto ip = peers.unsafe().back().getSocket().getRemoteIpAddress();
-					ZTCPP_THROW_ON_ERROR(ip, ZTError);
-					std::cout << "from: " << *ip << std::endl;
+					// Determine the other IP addresses the new Peer should connect to if we go down
+					std::vector<std::pair<zt::IpAddress, uint16_t>> backupPeers;
+					zt::IpAddress peerIP;
+					{
+						auto peerLock = peers.write_lock();
+						for(auto& peer: *peerLock)
+							backupPeers.emplace_back(peer.getRemoteIP(), peer.getRemotePort());
+
+						// Add the peer to the peer list
+						peerLock->emplace_back(std::move(*sock));
+						peerIP = peerLock->back().getRemoteIP();
+					}
+
+
+					// Notify the new peer of its backup Peers
+					ConnectMessage m;
+					m.type = Message::Type::connect;
+					m.backupPeers = backupPeers;
+					send(m, peerIP); // The write lock must be released before we send, otherwise we have the same thread taking multiple locks
+
+
+					std::cout << "Accepted Connection from:\n" << peerIP << std::endl;
 				}
 			}
 
@@ -107,37 +129,41 @@ public:
 		}
 		break; case Message::Type::lock:{
 			auto& m = reference_cast<FileMessage>(*msgPtr);
-			std::cout << "lock message" << std::endl;
+			std::cout << "[" << m.originatorNode << "] lock message" << std::endl;
 			// TODO: Process lock
 		}
 		break; case Message::Type::unlock:{
 			auto& m = reference_cast<FileMessage>(*msgPtr);
-			std::cout << "unlock message" << std::endl;
+			std::cout << "[" << m.originatorNode << "] unlock message" << std::endl;
 			// TODO: Process unlock
 		}
 		break; case Message::Type::deleteFile:{
 			auto& m = reference_cast<FileMessage>(*msgPtr);
-			std::cout << "delete message" << std::endl;
+			std::cout << "[" << m.originatorNode << "] delete message" << std::endl;
 			// TODO: Process delete
 		}
 		break; case Message::Type::create:{
 			auto& m = reference_cast<FileCreateMessage>(*msgPtr);
-			std::cout << "create message" << std::endl;
+			std::cout << "[" << m.originatorNode << "] create message" << std::endl;
 			// TODO: Process create
 		}
 		break; case Message::Type::change:{
 			auto& m = reference_cast<FileChangeMessage>(*msgPtr);
-			std::cout << "change message" << std::endl;
+			std::cout << "[" << m.originatorNode << "] change message" << std::endl;
 			// TODO: Process change
 		}
 		break; case Message::Type::connect:{
-			auto& m = reference_cast<DisconnectConnectMessage>(*msgPtr);
-			std::cout << "connect message" << std::endl;
-			// TODO: Process connect
+			auto& m = reference_cast<ConnectMessage>(*msgPtr);
+			std::cout << "[" << m.originatorNode << "] connect message" << std::endl;
+
+			// Save the backup IP addresses
+			backupPeers = std::move(m.backupPeers);
+
+			// TODO: delete managed data and prepare for data syncs
 		}
 		break; case Message::Type::disconnect:{
 			auto& m = reference_cast<DisconnectConnectMessage>(*msgPtr);
-			std::cout << "disconnect message" << std::endl;
+			std::cout << "[" << m.originatorNode << "] disconnect message" << std::endl;
 			// TODO: Process disconnect
 		}
 		break; default:
@@ -147,6 +173,10 @@ public:
 
 	// Function which gets a reference to the array of peers
 	monitor<std::vector<Peer>>& getPeers() { return peers; }
+
+	// Functions which get or set the gateway IP
+	const zt::IpAddress& getGatewayIP() { return gatewayIP; }
+	void setGatewayIP(const zt::IpAddress& ip) { gatewayIP = ip; }
 
 private:
 	// Only the singleton can be constructed
@@ -242,7 +272,7 @@ private:
 			messageQueue.insert(5, std::move(m));
 		}
 		break; case Message::Type::connect:{
-			auto m = std::make_unique<DisconnectConnectMessage>();
+			auto m = std::make_unique<ConnectMessage>();
 			ar >> *m;
 			// Connect has highest priority
 			messageQueue.insert(1, std::move(m));
