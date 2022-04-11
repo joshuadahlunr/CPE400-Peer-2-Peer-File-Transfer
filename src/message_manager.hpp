@@ -22,7 +22,69 @@ struct MessageManager {
 
 	// Function that processes the next message currently in the message queue
 	//	(or waits 1/10 of a second if there is nothing in the queue)
-	void processNextMessage();
+	void processNextMessage(){
+		auto min = messageQueue.findMin();
+		// If the queue is empty, sleep for 100ms
+		if(min == nullptr) {
+			std::this_thread::sleep_for(100ms);
+			return;
+		}
+
+		// Save the message and remove the node from the queue
+		std::unique_ptr<Message> msgPtr = std::move(min->value);
+		messageQueue.removeMin();
+
+
+		// Process the message as the same type of message that was delivered
+		switch(msgPtr->type) {
+		break; case Message::Type::payload:{
+			auto& m = reference_cast<PayloadMessage>(*msgPtr);
+			std::cout << "[" << m.originatorNode << "][payload]:\n" << m.payload << std::endl;
+		}
+		break; case Message::Type::lock:{
+			auto& m = reference_cast<FileMessage>(*msgPtr);
+			std::cout << "[" << m.originatorNode << "] lock message" << std::endl;
+			processLockMessage(m);
+		}
+		break; case Message::Type::unlock:{
+			auto& m = reference_cast<FileMessage>(*msgPtr);
+			std::cout << "[" << m.originatorNode << "] unlock message" << std::endl;
+			processUnlockMessage(m);
+		}
+		break; case Message::Type::deleteFile:{
+			auto& m = reference_cast<FileMessage>(*msgPtr);
+			std::cout << "[" << m.originatorNode << "] delete message" << std::endl;
+			processDeleteFileMessage(m);
+		}
+		break; case Message::Type::create:{
+			auto& m = reference_cast<FileCreateMessage>(*msgPtr);
+			std::cout << "[" << m.originatorNode << "] create message" << std::endl;
+			processCreateFileMessage(m);
+		}
+		break; case Message::Type::change:{
+			auto& m = reference_cast<FileChangeMessage>(*msgPtr);
+			std::cout << "[" << m.originatorNode << "] change message" << std::endl;
+			processChangeFileMessage(m);
+		}
+		break; case Message::Type::connect:{
+			auto& m = reference_cast<ConnectMessage>(*msgPtr);
+			std::cout << "[" << m.originatorNode << "] connect message" << std::endl;
+			processConnectMessage(m);
+		}
+		break; case Message::Type::disconnect:{
+			auto& m = reference_cast<Message>(*msgPtr);
+			std::cout << "[" << m.originatorNode << "] disconnect message" << std::endl;
+			processDisconnectMessage(m);
+		}
+		break; case Message::Type::linkLost:{
+			auto& m = reference_cast<Message>(*msgPtr);
+			std::cout << "[" << m.originatorNode << "] link-lost message" << std::endl;
+			processLinkLostMessage(m);
+		}
+		break; default:
+			throw std::runtime_error("Unrecognized message type");
+		}
+	}
 
 private:
 	// Only the singleton can be constructed
@@ -100,6 +162,16 @@ private:
 			throw std::runtime_error("Unrecognized message type");
 		}
 	}
+
+	// Functions that process individual types of messages
+	void processLockMessage(const FileMessage& m);
+	void processUnlockMessage(const FileMessage& m);
+	void processDeleteFileMessage(const FileMessage& m);
+	void processCreateFileMessage(const FileCreateMessage& m);
+	void processChangeFileMessage(const FileChangeMessage& m);
+	void processConnectMessage(const ConnectMessage& m);
+	void processLinkLostMessage(const Message& m);
+	void processDisconnectMessage(const Message& m);	
 };
 
 #endif // __MESSAGE_QUEUE_HPP__
