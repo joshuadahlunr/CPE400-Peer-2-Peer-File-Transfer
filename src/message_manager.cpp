@@ -1,6 +1,8 @@
 #include "peer_manager.hpp"
 #include "message_manager.hpp"
 
+#include <fstream>
+
 // Function that processes a file lock
 void MessageManager::processLockMessage(const FileMessage& m){
 
@@ -17,8 +19,55 @@ void MessageManager::processDeleteFileMessage(const FileMessage& m){
 }
 
 // Function that processes a file create
-void MessageManager::processCreateFileMessage(const FileCreateMessage& m){
+void MessageManager::processCreateFileMessage(const FileContentMessage& m){
 
+}
+
+// Function that processes an initial file sync
+void MessageManager::processInitialFileSyncMessage(const FileInitialSyncMessage& m){
+	std::cout << m.index << " / " << m.total << std::endl;
+	auto time_t = to_time_t(m.timestamp);
+
+	// Create intermediate directories
+	auto folder = m.targetFile;
+	create_directories(folder.remove_filename());
+	// Write the content of the file to disk
+	std::ofstream fout(m.targetFile);
+	fout << m.fileContent;
+	fout.close();
+
+	// Copy the file into the .wnts folder
+	auto wnts = wntsPath(m.targetFile);
+	auto wntsFolder = wnts;
+	create_directories(wntsFolder.remove_filename());
+	copy(m.targetFile, wnts, std::filesystem::copy_options::update_existing);
+
+	std::cout << m.targetFile << " - " << std::ctime(&time_t) << std::endl;
+}
+
+// Function that processes an initial file sync request
+void MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
+	// TODO: Can we parallelize this somehow?
+	// Send the content of every managed file to the newly connected node
+	auto paths = enumerateAllFiles(*folders);
+	for(size_t i = 0, size = paths.size(); i < size; i++){
+		FileInitialSyncMessage sync;
+		sync.type = Message::Type::initialSync;
+		sync.targetFile = paths[i];
+		sync.timestamp = std::chrono::system_clock::now();
+		sync.index = i;
+		sync.total = size - 1;
+
+		std::cout << sync.index << " / " << sync.total << std::endl;
+		
+		std::ifstream fin(sync.targetFile);
+		std::getline(fin, sync.fileContent, '\0');
+		fin.close();
+
+		// TODO: How do we avoid this massive rate limiter?
+		std::this_thread::sleep_for(1s);
+		PeerManager::singleton().send(sync, m.receiverNode);
+	}
 }
 
 // Function that processes a file change
@@ -30,8 +79,16 @@ void MessageManager::processChangeFileMessage(const FileChangeMessage& m){
 void MessageManager::processConnectMessage(const ConnectMessage& m){
 	// Save the backup IP addresses
 	PeerManager::singleton().backupPeers = std::move(m.backupPeers);
+	// Save the list of folders the network is managing
+	*folders = std::move(m.managedPaths);
 
-	// TODO: delete managed data and prepare for data syncs
+	// Delete managed data in preparation for data syncs
+	auto paths = enumerateAllFiles(*folders);
+	for(auto& path: paths) {
+		auto wnts = wntsPath(path);
+		remove(path);
+		remove(wnts);
+	}
 }
 
 // Function that handles losing our link to a peer

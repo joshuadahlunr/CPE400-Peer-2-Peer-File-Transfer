@@ -67,12 +67,18 @@ public:
 					}
 
 					// Notify the new peer of its backup Peers
-					ConnectMessage m;
-					m.type = Message::Type::connect;
-					m.backupPeers = backupPeers;
-					send(m, peerIP); // The write lock must be released before we send, otherwise we have the same thread taking multiple locks
+					ConnectMessage connectMessage;
+					connectMessage.type = Message::Type::connect;
+					connectMessage.backupPeers = backupPeers;
+					send(connectMessage, peerIP); // The write lock must be released before we send, otherwise we have the same thread taking multiple locks
 
-					std::cout << "Accepted Connection from:\n" << peerIP << std::endl;
+					// Add a message to the queue requesting all of the data be sent to the new node
+					auto syncRequest = std::make_unique<Message>();
+					syncRequest->type = Message::Type::initialSyncRequest;
+					syncRequest->originatorNode = peerIP;
+					MessageManager::singleton().messageQueue.insert(2, std::move(syncRequest)); // Same priority as disconnect
+
+					std::cout << "Accepted Connection from: " << peerIP << std::endl;
 				}
 			}
 

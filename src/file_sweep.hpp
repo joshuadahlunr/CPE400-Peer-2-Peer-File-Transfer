@@ -2,22 +2,10 @@
 #define __FILE_SWEEP_HPP__
 
 #include <map>
-#include <filesystem>
 #include <vector>
 #include <boost/predef.h>
 
 #include "include_everywhere.hpp"
-
-// Function which calculates the same path but in the .wnts folder
-inline std::filesystem::path wntsPath(const std::filesystem::path& path){
-	auto i = path.begin();
-	std::filesystem::path wntsPath = *i++;
-	wntsPath /= ".wnts";
-	for(; i != path.end(); i++)
-		wntsPath /= *i;
-	return wntsPath;
-}
-
 
 // Class which sweeps the provided folder structure every time its sweep function is called
 // There is a fast track optimization, where a recently modified subset of files is sweept every call, or a total sweep scanning all of the folders can be preformed
@@ -41,24 +29,6 @@ struct FilesystemSweeper {
 	//	but a file we are tracking doesn't get its counter updated, that means it was deleted)
 	size_t iteration = 0;
 
-
-	// Function which fills an array with paths to all of the files we are responsible for sweaping.
-	void enumerateAllPaths(std::vector<std::filesystem::path>& paths) {
-		// Recursively add all files in the managed folders
-		for(auto& path: folders)
-			for (std::filesystem::recursive_directory_iterator i(path), end; i != end; ++i)
-				if (!is_directory(i->path())) {
-					// Ignore any paths containing .wnts in their folder tree
-					bool good = true;
-					for(auto folder: i->path())
-						if(folder.string() == ".wnts"){
-							good = false;
-							break;
-						}
-					if(good) paths.push_back(i->path());
-				}
-	}
-
 	// Function which sets up the file sweaper
 	void setup() {
 		// Remove all of the .wnts folders
@@ -66,10 +36,7 @@ struct FilesystemSweeper {
 			remove_all(folder / ".wnts");
 
 		// Paths to the files this sweep should scan
-		std::vector<std::filesystem::path> paths;
-		enumerateAllPaths(paths);
-
-		// TODO: As part of the setup process we need to get all of the files from the network
+		std::vector<std::filesystem::path> paths = enumerateAllFiles(folders);
 
 		// Copy all of the files into the .wnts folder
 		for(auto& path: paths) {
@@ -94,7 +61,7 @@ struct FilesystemSweeper {
 
 		// If we are doing a total sweep, recursively add all of the files to <paths> (except those in the .wnts folder)
 		if(total)
-			enumerateAllPaths(paths);
+			enumerateAllFiles(folders, paths);
 		// If we are doing a fasttrack sweep, update the timestamp map point and add all of the current fasttrack files to <paths>
 		else {
 			for (auto& [path, _]: fastTrackTimestamps)

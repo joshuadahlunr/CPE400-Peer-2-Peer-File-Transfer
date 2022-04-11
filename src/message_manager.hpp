@@ -10,6 +10,9 @@
 struct MessageManager {
 	friend class PeerManager;
 
+	// The the application is mangaing
+	std::vector<std::filesystem::path>* folders;
+
 	// Queue of messages waiting to be processed (It is a non-blocking [skiplist based] concurrent queue)
 	// NOTE: Lower priorities = faster execution
 	mutable skipListQueue<std::unique_ptr<Message>> messageQueue;
@@ -57,9 +60,19 @@ struct MessageManager {
 			processDeleteFileMessage(m);
 		}
 		break; case Message::Type::create:{
-			auto& m = reference_cast<FileCreateMessage>(*msgPtr);
+			auto& m = reference_cast<FileContentMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] create message" << std::endl;
 			processCreateFileMessage(m);
+		}
+		break; case Message::Type::initialSync:{
+			auto& m = reference_cast<FileInitialSyncMessage>(*msgPtr);
+			std::cout << "[" << m.originatorNode << "] sync message" << std::endl;
+			processInitialFileSyncMessage(m);
+		}
+		break; case Message::Type::initialSyncRequest:{
+			auto& m = reference_cast<Message>(*msgPtr);
+			std::cout << "[" << m.originatorNode << "] sync request message" << std::endl;
+			processInitialFileSyncRequestMessage(m);
 		}
 		break; case Message::Type::change:{
 			auto& m = reference_cast<FileChangeMessage>(*msgPtr);
@@ -95,6 +108,7 @@ private:
 		// Extract the type of message
 		Message::Type type = (Message::Type) uint8_t(data[10]);
 		if((uint8_t)type == 0) type = (Message::Type) uint8_t(data[5]);
+		if((uint8_t)type == 0) type = (Message::Type) uint8_t(data[20]);
 		// Copy the data into a deserialization buffer
 		std::stringstream backing({(char*) data.data(), data.size()});
 		boost::archive::binary_iarchive ar(backing, archiveFlags);
@@ -131,11 +145,18 @@ private:
 			messageQueue.insert(5, std::move(m));
 		}
 		break; case Message::Type::create:{
-			auto m = std::make_unique<FileCreateMessage>();
+			auto m = std::make_unique<FileChangeMessage>();
 			ar >> *m;
 			// TODO: Check hash
 			// File messages have priority 5
 			messageQueue.insert(5, std::move(m));
+		}
+		break; case Message::Type::initialSync:{
+			auto m = std::make_unique<FileInitialSyncMessage>();
+			ar >> *m;
+			// TODO: Check hash
+			// Syncs are executed before other file messages 4
+			messageQueue.insert(4, std::move(m));
 		}
 		break; case Message::Type::change:{
 			auto m = std::make_unique<FileChangeMessage>();
@@ -167,7 +188,9 @@ private:
 	void processLockMessage(const FileMessage& m);
 	void processUnlockMessage(const FileMessage& m);
 	void processDeleteFileMessage(const FileMessage& m);
-	void processCreateFileMessage(const FileCreateMessage& m);
+	void processCreateFileMessage(const FileContentMessage& m);
+	void processInitialFileSyncMessage(const FileInitialSyncMessage& m);
+	void processInitialFileSyncRequestMessage(const Message& m);
 	void processChangeFileMessage(const FileChangeMessage& m);
 	void processConnectMessage(const ConnectMessage& m);
 	void processLinkLostMessage(const Message& m);

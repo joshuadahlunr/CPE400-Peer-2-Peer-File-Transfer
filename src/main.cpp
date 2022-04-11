@@ -37,23 +37,36 @@ int main(int argc, char** argv) {
 	// Parse the command line
 	#define COMMAND_LINE_ARGS argos::ArgumentParser(argv[0])\
         .about("Command line utility that syncsronizes a filesystem across a peer-2-peer network.")\
-		.add(argos::Argument("FOLDER").help("The folder/directory to be synchronized across the network."))\
-        .add(argos::Argument("IP").optional(true)\
+		.add(argos::Option{"-f", "--folders"}.argument("FOLDER")\
+			.help("The folder/directory to be synchronized across the network."))\
+        .add(argos::Option{"-c", "--connect", "--remote-address"}.argument("IP")\
             .help("IP address of a peer on the network we wish to join. (If not set, a new network is established)"))\
         .add(argos::Option{"-p", "--port"}.argument("PORT")\
             .help("Optional port number to connect to (default=" + std::to_string(defaultPort) + ")"))
 	const argos::ParsedArguments args = COMMAND_LINE_ARGS.parse(argc, argv);
 	uint16_t port = args.value("-p").as_uint(defaultPort);
-	auto remoteIP = zt::IpAddress::ipv6FromString(args.value("IP").as_string());
-	std::vector<std::filesystem::path> folders; boost::split(folders, args.value("FOLDER").as_string(), boost::is_any_of(","));
+	auto remoteIP = zt::IpAddress::ipv6FromString(args.value("-c").as_string());
+	std::vector<std::filesystem::path> folders; boost::split(folders, args.value("-f").as_string(), boost::is_any_of(","));
 
-	// If any of the specified folders don't exist... error
+	// If neither a list of folders nor remote IP are specified, error
+	if(folders.size() == 1 && folders[0] == "" && !remoteIP.isValid()) {
+		std::cerr << "wnts: Either a list of folders to manage, or the IP of a node on an existing network must be provided" << std::endl;
+		// Display the usage
+		std::array<const char*, 2> dummy = {argv[0], "fail!"};
+		auto _ = COMMAND_LINE_ARGS.parse(2, (char**) dummy.data());
+	}
+	// If a remote IP is provided, clear the list of folders
+	if(remoteIP.isValid()) folders.clear();
+
+	// If any of the specified folders don't exist... error, or make sure all of the paths are relative
 	for(auto& path: folders)
 		if(!exists(path)) {
 			std::cerr << "wnts: Target folder: " << path << " doesn't exist!" << std::endl;
 			// Display the usage
-			auto _ = COMMAND_LINE_ARGS.parse(1, argv);
-		}
+			std::array<const char*, 2> dummy = {argv[0], "fail!"};
+			auto _ = COMMAND_LINE_ARGS.parse(2, (char**) dummy.data());
+		} else
+			path = relative(path);
 
 
 	{
@@ -66,7 +79,10 @@ int main(int argc, char** argv) {
 
 
 	// Setup the networking components in a thread (it takes a while so we also tidy up the filesystem at the same time)
-	std::thread networkSetupThread([port]{
+	std::thread networkSetupThread([&folders, port]{
+		// Link the message manager's folders
+		MessageManager::singleton().folders = &folders;
+
 		// Establish our connection to ZeroTier
 		ZeroTierNode::singleton().setup();
 

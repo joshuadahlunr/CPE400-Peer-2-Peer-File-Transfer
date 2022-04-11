@@ -59,7 +59,7 @@ struct Message
 {
 	friend class boost::serialization::access;
 	// Action flag must be enumerator.
-	enum Type : uint8_t {lock, unlock, deleteFile, create, change, connect, disconnect, payload, linkLost} type;
+	enum Type : uint8_t {invalid = 0, lock, unlock, deleteFile, create, initialSync, initialSyncRequest, change, connect, disconnect, payload, linkLost} type;
 	// IP of the destination (may be unspecified to broadcast) node
 	zt::IpAddress receiverNode;
 	// IP of the source of the previous hop.
@@ -126,16 +126,31 @@ struct FileMessage : Message
     BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
-struct FileCreateMessage : FileMessage
+struct FileContentMessage : FileMessage
 {
 	//File content created.
-	std::string fCreate;
+	std::string fileContent;
 
 	template <typename Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
 		ar& boost::serialization::base_object<FileMessage>(*this);
-		ar& fCreate;
+		ar& fileContent;
+	}
+};
+
+struct FileInitialSyncMessage: FileContentMessage {
+	// Variable tracking the total number of files to be synced
+	size_t total,
+	// Variable tracking which index we are
+		index;
+
+	template <typename Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar& boost::serialization::base_object<FileContentMessage>(*this);
+		ar& total;
+		ar& index;
 	}
 };
 
@@ -156,6 +171,9 @@ struct FileChangeMessage : FileMessage
 struct ConnectMessage : Message {
 	// List containing backup IPs 
 	std::vector<std::pair<zt::IpAddress, uint16_t>> backupPeers;
+	
+	// List of managed paths 
+	std::vector<std::filesystem::path> managedPaths;
 
 	template <typename Archive>
 	void serialize(Archive& ar, const unsigned int version)
