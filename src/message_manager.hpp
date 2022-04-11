@@ -1,7 +1,7 @@
 #ifndef __MESSAGE_QUEUE_HPP__
 #define __MESSAGE_QUEUE_HPP__
 
-#include <lockfree_skiplist_priority_queue.h>
+#include <queue>
 #include "messages.hpp"
 
 #include "include_everywhere.hpp"
@@ -15,7 +15,13 @@ struct MessageManager {
 
 	// Queue of messages waiting to be processed (It is a non-blocking [skiplist based] concurrent queue)
 	// NOTE: Lower priorities = faster execution
-	mutable skipListQueue<std::unique_ptr<Message>> messageQueue;
+	using Prio = std::pair<size_t, std::unique_ptr<Message>>;
+	struct PrioComp {
+		bool operator() (const Prio& a, const Prio& b) {
+			return a.first < b.first;
+		}
+	};
+	mutable monitor<std::priority_queue<Prio, std::vector<Prio>, PrioComp>> messageQueue;
 
 	// Function which gets the MessageManager singleton
 	static MessageManager& singleton() {
@@ -26,16 +32,15 @@ struct MessageManager {
 	// Function that processes the next message currently in the message queue
 	//	(or waits 1/10 of a second if there is nothing in the queue)
 	void processNextMessage(){
-		auto min = messageQueue.findMin();
 		// If the queue is empty, sleep for 100ms
-		if(min == nullptr) {
+		if(messageQueue->empty()){
 			std::this_thread::sleep_for(100ms);
 			return;
 		}
 
 		// Save the message and remove the node from the queue
-		std::unique_ptr<Message> msgPtr = std::move(min->value);
-		messageQueue.removeMin();
+		std::unique_ptr<Message> msgPtr = std::move(reference_cast<Prio>(messageQueue->top()).second);
+		messageQueue->pop();
 
 
 		// Process the message as the same type of message that was delivered
@@ -121,63 +126,63 @@ private:
 			ar >> *m;
 			// TODO: Check hash
 			// Payloads have a low priority
-			messageQueue.insert(10, std::move(m));
+			messageQueue->emplace(10, std::move(m));
 		}
 		break; case Message::Type::lock:{
 			auto m = std::make_unique<FileMessage>();
 			ar >> *m;
 			// TODO: Check hash
 			// File messages have priority 5
-			messageQueue.insert(5, std::move(m));
+			messageQueue->emplace(5, std::move(m));
 		}
 		break; case Message::Type::unlock:{
 			auto m = std::make_unique<FileMessage>();
 			ar >> *m;
 			// TODO: Check hash
 			// File messages have priority 5
-			messageQueue.insert(5, std::move(m));
+			messageQueue->emplace(5, std::move(m));
 		}
 		break; case Message::Type::deleteFile:{
 			auto m = std::make_unique<FileMessage>();
 			ar >> *m;
 			// TODO: Check hash
 			// File messages have priority 5
-			messageQueue.insert(5, std::move(m));
+			messageQueue->emplace(5, std::move(m));
 		}
 		break; case Message::Type::create:{
 			auto m = std::make_unique<FileChangeMessage>();
 			ar >> *m;
 			// TODO: Check hash
 			// File messages have priority 5
-			messageQueue.insert(5, std::move(m));
+			messageQueue->emplace(5, std::move(m));
 		}
 		break; case Message::Type::initialSync:{
 			auto m = std::make_unique<FileInitialSyncMessage>();
 			ar >> *m;
 			// TODO: Check hash
 			// Syncs are executed before other file messages 4
-			messageQueue.insert(4, std::move(m));
+			messageQueue->emplace(4, std::move(m));
 		}
 		break; case Message::Type::change:{
 			auto m = std::make_unique<FileChangeMessage>();
 			ar >> *m;
 			// TODO: Check hash
 			// File messages have priority 5
-			messageQueue.insert(5, std::move(m));
+			messageQueue->emplace(5, std::move(m));
 		}
 		break; case Message::Type::connect:{
 			auto m = std::make_unique<ConnectMessage>();
 			ar >> *m;
 			// TODO: Check hash
 			// Connect has highest priority
-			messageQueue.insert(1, std::move(m));
+			messageQueue->emplace(1, std::move(m));
 		}
 		break; case Message::Type::disconnect:{
 			auto m = std::make_unique<Message>();
 			ar >> *m;
 			// TODO: Check hash
 			// Disconnect is processed after disconnect
-			messageQueue.insert(2, std::move(m));
+			messageQueue->emplace(2, std::move(m));
 		}
 		break; default:
 			throw std::runtime_error("Unrecognized message type");

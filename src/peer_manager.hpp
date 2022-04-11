@@ -76,7 +76,7 @@ public:
 					auto syncRequest = std::make_unique<Message>();
 					syncRequest->type = Message::Type::initialSyncRequest;
 					syncRequest->originatorNode = peerIP;
-					MessageManager::singleton().messageQueue.insert(2, std::move(syncRequest)); // Same priority as disconnect
+					MessageManager::singleton().messageQueue->emplace(2, std::move(syncRequest)); // Same priority as disconnect
 
 					std::cout << "Accepted Connection from: " << peerIP << std::endl;
 				}

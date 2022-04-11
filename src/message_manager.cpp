@@ -64,8 +64,6 @@ void MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
 		std::getline(fin, sync.fileContent, '\0');
 		fin.close();
 
-		// TODO: How do we avoid this massive rate limiter?
-		std::this_thread::sleep_for(1s);
 		PeerManager::singleton().send(sync, m.receiverNode);
 	}
 }
