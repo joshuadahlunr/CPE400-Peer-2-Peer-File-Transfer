@@ -1,5 +1,6 @@
 #include "ztnode.hpp"
 #include "peer_manager.hpp"
+#include "message_manager.hpp"
 #include "file_sweep.hpp"
 #include "diff.hpp"
 #include <csignal>
@@ -111,7 +112,7 @@ int main(int argc, char** argv) {
 
 		// Process messages until a second has elapsed since the start of the loop
 		while(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start).count() < 1000)
-			PeerManager::singleton().processNextMessage();
+			MessageManager::singleton().processNextMessage();
 	}
 
 	return 0;

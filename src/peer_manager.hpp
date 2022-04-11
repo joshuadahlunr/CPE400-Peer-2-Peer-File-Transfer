@@ -4,9 +4,7 @@
 #include "peer.hpp"
 #include "monitor.hpp"
 #include "ztnode.hpp"
-
-#include <lockfree_skiplist_priority_queue.h>
-#include "messages.hpp"
+#include "message_manager.hpp"
 
 #include "networking_include_everywhere.hpp"
 
@@ -21,10 +19,7 @@ class PeerManager {
 	// List of peers (guarded by a monitor, access to this object ges through a mutex)
 	monitor<std::vector<Peer>> peers;
 
-	// Queue of messages waiting to be processed (It is a non-blocking [skiplist based] concurrent queue)
-	// NOTE: Lower priorities = faster execution
-	mutable skipListQueue<std::unique_ptr<Message>> messageQueue;
-
+public:
 	// The IP address of the Peer which provides connectivity to the rest of the network
 	zt::IpAddress gatewayIP = zt::IpAddress::ipv6Unspecified();
 	// List of IP address we can replace the gatewayIP with should the gatewayIP go offline
@@ -71,13 +66,11 @@ public:
 						peerIP = peerLock->back().getRemoteIP();
 					}
 
-
 					// Notify the new peer of its backup Peers
 					ConnectMessage m;
 					m.type = Message::Type::connect;
 					m.backupPeers = backupPeers;
 					send(m, peerIP); // The write lock must be released before we send, otherwise we have the same thread taking multiple locks
-
 
 					std::cout << "Accepted Connection from:\n" << peerIP << std::endl;
 				}
@@ -107,127 +100,6 @@ public:
 			broadcastToSelf ? zt::IpAddress::ipv6Unspecified() : zt::IpAddress::ipv6Loopback());
 	}
 
-	// Function that processes the next message currently in the message queue
-	//	(or waits 1/10 of a second if there is nothing in the queue)
-	void processNextMessage(){
-		auto min = messageQueue.findMin();
-		// If the queue is empty, sleep for 100ms
-		if(min == nullptr) {
-			std::this_thread::sleep_for(100ms);
-			return;
-		}
-
-		// Save the message and remove the node from the queue
-		std::unique_ptr<Message> msgPtr = std::move(min->value);
-		messageQueue.removeMin();
-
-
-		// Deserialize the message as the same type of message that was delivered
-		switch(msgPtr->type) {
-		break; case Message::Type::payload:{
-			auto& m = reference_cast<PayloadMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "][payload]:\n" << m.payload << std::endl;
-		}
-		break; case Message::Type::lock:{
-			auto& m = reference_cast<FileMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] lock message" << std::endl;
-			// TODO: Process lock
-		}
-		break; case Message::Type::unlock:{
-			auto& m = reference_cast<FileMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] unlock message" << std::endl;
-			// TODO: Process unlock
-		}
-		break; case Message::Type::deleteFile:{
-			auto& m = reference_cast<FileMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] delete message" << std::endl;
-			// TODO: Process delete
-		}
-		break; case Message::Type::create:{
-			auto& m = reference_cast<FileCreateMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] create message" << std::endl;
-			// TODO: Process create
-		}
-		break; case Message::Type::change:{
-			auto& m = reference_cast<FileChangeMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] change message" << std::endl;
-			// TODO: Process change
-		}
-		break; case Message::Type::connect:{
-			auto& m = reference_cast<ConnectMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] connect message" << std::endl;
-
-			// Save the backup IP addresses
-			backupPeers = std::move(m.backupPeers);
-
-			// TODO: delete managed data and prepare for data syncs
-		}
-		break; case Message::Type::disconnect:{
-			auto& m = reference_cast<Message>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] disconnect message" << std::endl;
-			
-			// Remove the Peer as a backup Peer
-			for(size_t peer = 0; peer < backupPeers.size(); peer++) {
-				auto& [backupIP, _] = backupPeers[peer];
-				if(backupIP == m.originatorNode)
-					backupPeers.erase(backupPeers.begin() + peer);
-			}
-
-			// TODO: free any locks held by the peer
-		}
-		break; case Message::Type::linkLost:{
-			auto& m = reference_cast<Message>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] link-lost message" << std::endl;
-			
-			zt::IpAddress removedIP;
-			{
-				auto peerLock = peers.write_lock();
-				// Find the Peer that disconnected
-				size_t index = -1;
-				for(size_t i = 0; i < peerLock->size(); i++)
-					if(peerLock[i].getRemoteIP() == m.originatorNode) {
-						index = i;
-						break;
-					}
-				if(index != std::numeric_limits<size_t>::max()){
-					// Remove the disconnected Peer from our list of Peers
-					removedIP = peerLock[index].getRemoteIP();
-					peerLock->erase(peerLock->begin() + index);
-
-					// If the removed Peer was our gateway, connect to one of the backup Peers so that the nextwork doesn't become segmented
-					if(removedIP == gatewayIP) {
-						setGatewayIP(zt::IpAddress::ipv6Unspecified()); // Mark that we don't have a gateway
-						for(size_t peer = 0; peer < backupPeers.size(); peer++) {
-							auto& [backupIP, backupPort] = backupPeers[peer];
-							if(backupIP.isValid()) {
-								try {
-									peerLock->insert(peerLock->begin(), std::move(Peer::connect(backupIP, backupPort)));
-									setGatewayIP(backupIP); // Mark the backup IP as our "gateway" to the rest of the network
-									std::cout << "Updated gateway to: " << backupIP << std::endl;
-
-									// If a backup Peer becomes our gateway remove it as a backup and stop looking
-									backupPeers.erase(backupPeers.begin() + peer);
-									break;
-								// If we failed to connect to a Peer, try the next one
-								} catch (std::runtime_error) { continue; }
-							}
-						}
-					}
-				}
-			}
-
-			// Notify the rest of the network that a Peer disconnected
-			if(removedIP.isValid()) {
-				Message m;
-				m.type = Message::Type::disconnect;
-				m.originatorNode = removedIP;
-				send(m); // The write lock has to be released before we send
-			}
-		}
-		break; default:
-			throw std::runtime_error("Unrecognized message type");
-		}
-	}
 
 	// Function which gets a reference to the array of peers
 	monitor<std::vector<Peer>>& getPeers() { return peers; }
@@ -254,7 +126,7 @@ private:
 
 			// Process the data locally (unless we are the source)
 			if( !(source == zt::IpAddress::ipv6Loopback() || source == zt::IpAddress::ipv4Loopback() || source == ZeroTierNode::singleton().getIP()) )
-				deserializeMessage(data);
+				MessageManager::singleton().deserializeMessage(data);
 		};
 
 
@@ -263,7 +135,7 @@ private:
 			forward2all();
 		// If we are the destination, process the data locally
 		else if(destination == zt::IpAddress::ipv6Loopback() || destination == zt::IpAddress::ipv4Loopback() || destination == ZeroTierNode::singleton().getIP())
-			deserializeMessage(data);
+			MessageManager::singleton().deserializeMessage(data);
 		else {
 			// Find the directly connected peer we need to forward data to
 			bool directLink = false;
@@ -277,72 +149,6 @@ private:
 			// If we don't have a direct link to the destination, forward the data to everyone
 			if(!directLink)
 				forward2all();
-		}
-	}
-
-
-	// Function that deserializes a message received from the network and adds it to the message queue
-	void deserializeMessage(const std::span<std::byte> data) const {
-		// Extract the type of message
-		Message::Type type = (Message::Type) uint8_t(data[10]);
-		if((uint8_t)type == 0) type = (Message::Type) uint8_t(data[5]);
-		// Copy the data into a deserialization buffer
-		std::stringstream backing({(char*) data.data(), data.size()});
-		boost::archive::binary_iarchive ar(backing, archiveFlags);
-
-
-		// Deserialize the message as the same type of message that was delivered and add it to the message queue
-		switch(type) {
-		break; case Message::Type::payload:{
-			auto m = std::make_unique<PayloadMessage>();
-			ar >> *m;
-			// Payloads have a low priority
-			messageQueue.insert(10, std::move(m));
-		}
-		break; case Message::Type::lock:{
-			auto m = std::make_unique<FileMessage>();
-			ar >> *m;
-			// File messages have priority 5
-			messageQueue.insert(5, std::move(m));
-		}
-		break; case Message::Type::unlock:{
-			auto m = std::make_unique<FileMessage>();
-			ar >> *m;
-			// File messages have priority 5
-			messageQueue.insert(5, std::move(m));
-		}
-		break; case Message::Type::deleteFile:{
-			auto m = std::make_unique<FileMessage>();
-			ar >> *m;
-			// File messages have priority 5
-			messageQueue.insert(5, std::move(m));
-		}
-		break; case Message::Type::create:{
-			auto m = std::make_unique<FileCreateMessage>();
-			ar >> *m;
-			// File messages have priority 5
-			messageQueue.insert(5, std::move(m));
-		}
-		break; case Message::Type::change:{
-			auto m = std::make_unique<FileChangeMessage>();
-			ar >> *m;
-			// File messages have priority 5
-			messageQueue.insert(5, std::move(m));
-		}
-		break; case Message::Type::connect:{
-			auto m = std::make_unique<ConnectMessage>();
-			ar >> *m;
-			// Connect has highest priority
-			messageQueue.insert(1, std::move(m));
-		}
-		break; case Message::Type::disconnect:{
-			auto m = std::make_unique<Message>();
-			ar >> *m;
-			// Disconnect is processed after disconnect
-			messageQueue.insert(2, std::move(m));
-		}
-		break; default:
-			throw std::runtime_error("Unrecognized message type");
 		}
 	}
 };

@@ -70,7 +70,7 @@ void Peer::threadFunction(std::stop_token stop){
 				auto m = std::make_unique<Message>();
 				m->type = Message::Type::linkLost;
 				m->originatorNode = getRemoteIP();
-				PeerManager::singleton().messageQueue.insert(1, std::move(m)); // Same priority as disconnect messages
+				MessageManager::singleton().messageQueue.insert(1, std::move(m)); // Same priority as disconnect messages
 
 				return;
 			}
