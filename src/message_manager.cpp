@@ -46,12 +46,164 @@ void MessageManager::processResendRequestMessage(const ResendRequestMessage& req
 
 // Function that processes a file lock
 void MessageManager::processLockMessage(const FileMessage& m){
+	// Open file
+	std::fstream fout("message.dat", std::ios::out | std::ios::binary);
 
+
+	if(!exists(m.targetFile))
+		std::cout << "No Path\n";
+
+	else
+	{
+		std::cout << "File status." << m.targetFile << std::endl;
+	
+		// Path exists so check to see if lock exists.
+		std::filesystem::perms check = std::filesystem::status(m.targetFile).permissions();
+		std::cout << "Owner Read: " << ((check & std::filesystem::perms::owner_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
+		std::cout << "Group Read: " << ((check & std::filesystem::perms::group_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
+		std::cout << "Others Read: " << ((check & std::filesystem::perms::others_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
+		std::cout << "Owner Write: " << ((check & std::filesystem::perms::owner_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
+		std::cout << "Group Write: " << ((check & std::filesystem::perms::group_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
+		std::cout << "Others Write: " << ((check & std::filesystem::perms::others_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
+		std::cout << "Owner Exec: " << ((check & std::filesystem::perms::owner_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
+		std::cout << "Group Exec: " << ((check & std::filesystem::perms::group_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
+		std::cout << "Others Exec: " << ((check & std::filesystem::perms::others_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
+
+		// Check for read permissions.
+		if(((check & std::filesystem::perms::owner_read) != std::filesystem::perms::none) 
+			|| ((check & std::filesystem::perms::group_read) != std::filesystem::perms::none)
+			|| ((check & std::filesystem::perms::others_read) != std::filesystem::perms::none))
+		{
+			std::cout << "Owner, Others, or Group may have read permissions.\n";
+			
+			// Check to see if there are write permissions which means not locked.  
+			if(((check & std::filesystem::perms::owner_write) != std::filesystem::perms::none)
+				|| ((check & std::filesystem::perms::group_write) != std::filesystem::perms::none)
+				|| ((check & std::filesystem::perms::others_write) != std::filesystem::perms::none))
+		
+			{
+				std::cout << "Owner, Others, or Group may have have write permissions, file not locked.\n";
+				
+				// Lock file by writting to file and change permissions.
+				std::filesystem::permissions(m.targetFile, std::filesystem::perms::owner_write, std::filesystem::perm_options::remove);
+				std::filesystem::permissions(m.targetFile, std::filesystem::perms::group_write, std::filesystem::perm_options::remove);
+				std::filesystem::permissions(m.targetFile, std::filesystem::perms::others_write, std::filesystem::perm_options::remove);
+				
+				// Write to file.
+				fout.write(reinterpret_cast<const char *>(&m), sizeof(m));
+				std::cout << "File has been written to, file is now locked!!!\n";
+				// Write new timestamp. 
+				fileLocks.push_back(m); 
+
+
+			}
+
+			// File has read only permissions so it is locked.
+			else
+			{
+				std::cout << "File is locked.\n";
+		
+				for(int i = 0; i < fileLocks.size(); i++)
+				{
+					// Find target path to get timestamp.
+						if(m.targetFile == fileLocks[i].targetFile)
+						{
+							if(m.timestamp < fileLocks[i].timestamp)
+							{
+							// Current user has the lock, update vector.
+							std::cout << "You have the lock currently.\n";
+							fileLocks[i].timestamp = m.timestamp;
+							fileLocks[i].originatorNode = m.originatorNode;
+							fileLocks[i].targetFile = m.targetFile;
+						
+							}
+
+
+						}
+					
+				}
+				
+
+			}
+		}
+		
+	}
 }
 
 // Function that processes a file unlock
 void MessageManager::processUnlockMessage(const FileMessage& m){
+	std::cout << "In unlock.\n";
 
+	std::cout << "File status." << m.targetFile << std::endl;
+
+	// Find tagetFile path to unlock.
+	if (fileLocks.size() == 0)
+	{
+		std::cout << "File is already unlocked!" << std::endl;
+	}
+	else
+	{
+
+		// Find same target path
+		for(int i = 0; i < fileLocks.size(); i++)
+		{
+			std::cout << "Inside for loop\n";
+
+			if(m.targetFile == fileLocks[i].targetFile)
+			{
+
+				std::cout << "Test 6:\n";
+				// Update originatorNode 
+				if(m.originatorNode == fileLocks[i].originatorNode)	
+				{	
+					//if path exists check to see if lock exists.
+					std::filesystem::perms check = std::filesystem::status(m.targetFile).permissions();
+					std::cout << "Owner Read: " << ((check & std::filesystem::perms::owner_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
+					std::cout << "Group Read: " << ((check & std::filesystem::perms::group_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
+					std::cout << "Others Read: " << ((check & std::filesystem::perms::others_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
+					std::cout << "Owner Write: " << ((check & std::filesystem::perms::owner_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
+					std::cout << "Group Write: " << ((check & std::filesystem::perms::group_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
+					std::cout << "Others Write: " << ((check & std::filesystem::perms::others_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
+					std::cout << "Owner Exec: " << ((check & std::filesystem::perms::owner_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
+					std::cout << "Group Exec: " << ((check & std::filesystem::perms::group_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
+					std::cout << "Others Exec: " << ((check & std::filesystem::perms::others_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
+
+					// Check to see if there are write permissions, if there are then file is unlocked.
+					if(((check & std::filesystem::perms::owner_write) != std::filesystem::perms::none)
+					|| ((check & std::filesystem::perms::group_write) != std::filesystem::perms::none)
+					|| ((check & std::filesystem::perms::others_write) != std::filesystem::perms::none))
+					{
+						// File is unlocked 
+						std::cout << "File is unlocked" << std::endl;
+					
+					}
+
+					else
+					{
+						// File is locked add permissions to unlock
+						std::filesystem::permissions(m.targetFile, std::filesystem::perms::group_all, std::filesystem::perm_options::add);
+						std::filesystem::permissions(m.targetFile, std::filesystem::perms::others_all, std::filesystem::perm_options::add);
+						std::filesystem::permissions(m.targetFile, std::filesystem::perms::owner_all, std::filesystem::perm_options::add);
+						std::filesystem::perms check = std::filesystem::status(m.targetFile).permissions();
+						std::cout << "File is now unlocked.\n";
+						std::cout << "Owner Read: " << ((check & std::filesystem::perms::owner_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
+						std::cout << "Group Read: " << ((check & std::filesystem::perms::group_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
+						std::cout << "Others Read: " << ((check & std::filesystem::perms::others_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
+						std::cout << "Owner Write: " << ((check & std::filesystem::perms::owner_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
+						std::cout << "Group Write: " << ((check & std::filesystem::perms::group_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
+						std::cout << "Others Write: " << ((check & std::filesystem::perms::others_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
+						std::cout << "Owner Exec: " << ((check & std::filesystem::perms::owner_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
+						std::cout << "Group Exec: " << ((check & std::filesystem::perms::group_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
+						std::cout << "Others Exec: " << ((check & std::filesystem::perms::others_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
+						// Erase previous lock.
+						fileLocks.erase(fileLocks.begin() + i);
+
+					}
+				}
+			}
+
+		}
+	}
 }
 
 // Function that processes a file delete

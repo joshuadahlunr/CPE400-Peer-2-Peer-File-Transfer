@@ -27,6 +27,9 @@ struct MessageManager {
 	// Circular buffer that maintains a record of the past 100 messages that have been recieved or sent
 	finalizeable_circular_buffer_array<std::unique_ptr<Message>, 100> oldMessages;
 
+	// Vector to hold file locks to compare against.
+	std::vector<FileMessage> fileLocks;
+
 
 
 	// Function which gets the MessageManager singleton
