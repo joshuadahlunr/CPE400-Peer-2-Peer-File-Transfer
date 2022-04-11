@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
 	// Setup the networking components in a thread (it takes a while so we also tidy up the filesystem at the same time)
 	std::thread networkSetupThread([&folders, port]{
 		// Link the message manager's folders
-		MessageManager::singleton().folders = &folders;
+		MessageManager::singleton().setup(folders);
 
 		// Establish our connection to ZeroTier
 		ZeroTierNode::singleton().setup();

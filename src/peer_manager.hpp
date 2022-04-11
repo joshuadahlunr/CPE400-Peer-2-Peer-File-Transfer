@@ -105,6 +105,9 @@ public:
 		// Forward the data (based on the added routing information)
 		routeData(nonstd::span<std::byte>{(std::byte*) stream.str().data(), stream.str().size()}, destination,
 			broadcastToSelf ? zt::IpAddress::ipv6Unspecified() : zt::IpAddress::ipv6Loopback());
+
+		// Move the message into the buffer of old messages
+		MessageManager::singleton().oldMessages.emplace_back(std::make_unique<MSG>(std::move(msg)));
 	}
 
 

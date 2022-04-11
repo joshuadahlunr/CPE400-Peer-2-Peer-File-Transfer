@@ -2,6 +2,7 @@
 #define __MESSAGE_QUEUE_HPP__
 
 #include <queue>
+#include <circular_buffer.hpp>
 #include "messages.hpp"
 
 #include "include_everywhere.hpp"
@@ -23,11 +24,23 @@ struct MessageManager {
 	};
 	mutable monitor<std::priority_queue<Prio, std::vector<Prio>, PrioComp>> messageQueue;
 
+	// Circular buffer that maintains a record of the past 50 messages that have been recieved or sent
+	finalizeable_circular_buffer_array<std::unique_ptr<Message>, 50> oldMessages;
+
+
+
 	// Function which gets the MessageManager singleton
 	static MessageManager& singleton() {
 		static MessageManager instance;
 		return instance;
 	}
+
+	// Function which gets a reference to the managed folders, and sets up the circular buffer to free released pointers
+	void setup(std::vector<std::filesystem::path>& folders){
+		this->folders = &folders;
+		oldMessages.setFinalizer([](std::unique_ptr<Message>& m){ m.release(); });
+	}
+
 
 	// Function that processes the next message currently in the message queue
 	//	(or waits 1/10 of a second if there is nothing in the queue)
@@ -102,6 +115,9 @@ struct MessageManager {
 		break; default:
 			throw std::runtime_error("Unrecognized message type");
 		}
+
+		// Move the message into the buffer of old messages
+		oldMessages.emplace_back(std::move(msgPtr));
 	}
 
 private:
