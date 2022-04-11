@@ -59,7 +59,7 @@ struct Message
 {
 	friend class boost::serialization::access;
 	// Action flag must be enumerator.
-	enum Type : uint8_t {lock, unlock, deleteFile, create, change, connect, disconnect, payload} type;
+	enum Type : uint8_t {lock, unlock, deleteFile, create, change, connect, disconnect, payload, linkLost} type;
 	// IP of the destination (may be unspecified to broadcast) node
 	zt::IpAddress receiverNode;
 	// IP of the source of the previous hop.

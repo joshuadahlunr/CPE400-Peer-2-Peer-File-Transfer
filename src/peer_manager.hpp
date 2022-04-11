@@ -166,6 +166,50 @@ public:
 			std::cout << "[" << m.originatorNode << "] disconnect message" << std::endl;
 			// TODO: Process disconnect
 		}
+		break; case Message::Type::linkLost:{
+			auto& m = reference_cast<Message>(*msgPtr);
+			std::cout << "[" << m.originatorNode << "] link-lost message" << std::endl;
+			
+			zt::IpAddress removedIP;
+			{
+				auto peerLock = peers.write_lock();
+				// Find the Peer that disconnected
+				size_t index = -1;
+				for(size_t i = 0; i < peerLock->size(); i++)
+					if(peerLock[i].getRemoteIP() == m.originatorNode) {
+						index = i;
+						break;
+					}
+				if(index != std::numeric_limits<size_t>::max()){
+					// Remove the disconnected Peer from our list of Peers
+					removedIP = peerLock[index].getRemoteIP();
+					peerLock->erase(peerLock->begin() + index);
+
+					// If the removed Peer was our gateway, connect to one of the backup Peers so that the nextwork doesn't become segmented
+					if(removedIP == gatewayIP) {
+						setGatewayIP(zt::IpAddress::ipv6Unspecified()); // Mark that we don't have a gateway
+						for(size_t peer = 0; peer < backupPeers.size(); peer++) {
+							auto& [backupIP, backupPort] = backupPeers[peer];
+							if(backupIP.isValid()) {
+								try {
+									peerLock->insert(peerLock->begin(), std::move(Peer::connect(backupIP, backupPort)));
+									setGatewayIP(backupIP); // Mark the backup IP as our "gateway" to the rest of the network
+									std::cout << "Updated gateway to: " << backupIP << std::endl;
+
+									// If a backup Peer becomes our gateway remove it as a backup and stop looking
+									backupPeers.erase(backupPeers.begin() + peer);
+									break;
+								// If we failed to connect to a Peer, try the next one
+								} catch (std::runtime_error) { continue; }
+							}
+						}
+					}
+				}
+			}
+
+			// TODO: Notify the rest of the network that a peer disconnected
+			}
+		}
 		break; default:
 			throw std::runtime_error("Unrecognized message type");
 		}
