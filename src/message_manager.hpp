@@ -18,7 +18,7 @@ struct MessageManager {
 	using Prio = std::pair<size_t, std::unique_ptr<Message>>;
 	struct PrioComp {
 		bool operator() (const Prio& a, const Prio& b) {
-			return a.first < b.first;
+			return a.first > b.first;
 		}
 	};
 	mutable monitor<std::priority_queue<Prio, std::vector<Prio>, PrioComp>> messageQueue;
@@ -125,6 +125,7 @@ private:
 			auto m = std::make_unique<PayloadMessage>();
 			ar >> *m;
 			// TODO: Check hash
+			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
 			// Payloads have a low priority
 			messageQueue->emplace(10, std::move(m));
 		}
@@ -132,6 +133,7 @@ private:
 			auto m = std::make_unique<FileMessage>();
 			ar >> *m;
 			// TODO: Check hash
+			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
 			// File messages have priority 5
 			messageQueue->emplace(5, std::move(m));
 		}
@@ -139,6 +141,7 @@ private:
 			auto m = std::make_unique<FileMessage>();
 			ar >> *m;
 			// TODO: Check hash
+			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
 			// File messages have priority 5
 			messageQueue->emplace(5, std::move(m));
 		}
@@ -146,6 +149,7 @@ private:
 			auto m = std::make_unique<FileMessage>();
 			ar >> *m;
 			// TODO: Check hash
+			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
 			// File messages have priority 5
 			messageQueue->emplace(5, std::move(m));
 		}
@@ -153,6 +157,7 @@ private:
 			auto m = std::make_unique<FileChangeMessage>();
 			ar >> *m;
 			// TODO: Check hash
+			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
 			// File messages have priority 5
 			messageQueue->emplace(5, std::move(m));
 		}
@@ -160,6 +165,7 @@ private:
 			auto m = std::make_unique<FileInitialSyncMessage>();
 			ar >> *m;
 			// TODO: Check hash
+			std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
 			// Syncs are executed before other file messages 4
 			messageQueue->emplace(4, std::move(m));
 		}
@@ -167,6 +173,7 @@ private:
 			auto m = std::make_unique<FileChangeMessage>();
 			ar >> *m;
 			// TODO: Check hash
+			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
 			// File messages have priority 5
 			messageQueue->emplace(5, std::move(m));
 		}
@@ -174,6 +181,7 @@ private:
 			auto m = std::make_unique<ConnectMessage>();
 			ar >> *m;
 			// TODO: Check hash
+			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
 			// Connect has highest priority
 			messageQueue->emplace(1, std::move(m));
 		}
@@ -181,6 +189,7 @@ private:
 			auto m = std::make_unique<Message>();
 			ar >> *m;
 			// TODO: Check hash
+			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
 			// Disconnect is processed after disconnect
 			messageQueue->emplace(2, std::move(m));
 		}
@@ -199,7 +208,7 @@ private:
 	void processChangeFileMessage(const FileChangeMessage& m);
 	void processConnectMessage(const ConnectMessage& m);
 	void processLinkLostMessage(const Message& m);
-	void processDisconnectMessage(const Message& m);	
+	void processDisconnectMessage(const Message& m);
 };
 
 #endif // __MESSAGE_QUEUE_HPP__

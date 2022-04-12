@@ -14,7 +14,6 @@
 #include <boost/serialization/utility.hpp>
 #include <filesystem>
 
-
 #include "networking_include_everywhere.hpp"
 
 
@@ -67,12 +66,31 @@ struct Message
 	// IP of the originator node (original source of the message)
 	zt::IpAddress originatorNode = zt::IpAddress::ipv6Unspecified();
 
+	// Hash used to verify that a message was transmitted successfully
+	size_t messageHash;
+
 	template <typename Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
 		ar& reference_cast<uint8_t>(type);
 		ar& receiverNode;
 		ar& originatorNode;
+		ar& messageHash;
+	}
+
+	size_t hash() {
+		std::string str = hashString();
+		size_t hash = 0;
+		for(char c: str)
+			hash += c;
+
+		return hash;
+	}
+protected:
+	virtual std::string hashString() {
+		return std::to_string((int)type)
+			+ receiverNode.toString()
+			+ originatorNode.toString();
 	}
 };
 // Disconnect and link-lost messages use the originator node to mark the node that the network can no longer see.
@@ -89,6 +107,9 @@ struct PayloadMessage : Message {
 		ar& boost::serialization::base_object<Message>(*this);
 		ar& payload;
 	}
+
+protected:
+	std::string hashString() override { return Message::hashString() + payload; }
 };
 
 struct FileMessage : Message
@@ -124,6 +145,14 @@ struct FileMessage : Message
 		timestamp = std::chrono::system_clock::from_time_t(tm);
     }
     BOOST_SERIALIZATION_SPLIT_MEMBER()
+
+protected:
+	std::string hashString() override {
+		auto time_t = to_time_t(timestamp);
+		return Message::hashString()
+			+ targetFile.string()
+			+ std::ctime(&time_t);
+	}
 };
 
 struct FileContentMessage : FileMessage
@@ -137,6 +166,9 @@ struct FileContentMessage : FileMessage
 		ar& boost::serialization::base_object<FileMessage>(*this);
 		ar& fileContent;
 	}
+
+protected:
+	std::string hashString() override { return FileMessage::hashString() + fileContent; }
 };
 
 struct FileInitialSyncMessage: FileContentMessage {
@@ -152,6 +184,9 @@ struct FileInitialSyncMessage: FileContentMessage {
 		ar& total;
 		ar& index;
 	}
+
+protected:
+	std::string hashString() override { return FileContentMessage::hashString() + std::to_string(total) + std::to_string(index); }
 };
 
 struct FileChangeMessage : FileMessage
@@ -166,13 +201,16 @@ struct FileChangeMessage : FileMessage
 		ar& boost::serialization::base_object<FileMessage>(*this);
 		ar& fChange;
 	}
+
+protected:
+	std::string hashString() override { return FileMessage::hashString() + fChange; }
 };
 
 struct ConnectMessage : Message {
-	// List containing backup IPs 
+	// List containing backup IPs
 	std::vector<std::pair<zt::IpAddress, uint16_t>> backupPeers;
-	
-	// List of managed paths 
+
+	// List of managed paths
 	std::vector<std::filesystem::path> managedPaths;
 
 	template <typename Archive>
@@ -180,6 +218,15 @@ struct ConnectMessage : Message {
 	{
 		ar& boost::serialization::base_object<Message>(*this);
 		ar& backupPeers;
+	}
+
+	std::string hashString() override {
+		std::string hash = Message::hashString();
+		for(auto& [ip, port]: backupPeers)
+			hash += ip.toString() + std::to_string(port);
+		for(auto& path: managedPaths)
+			hash += path.string();
+		return hash;
 	}
 };
 

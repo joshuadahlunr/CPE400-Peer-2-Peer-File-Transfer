@@ -95,6 +95,7 @@ public:
 		msg.receiverNode = destination;
 		msg.senderNode = ZeroTierNode::singleton().getIP();
 		if(msg.originatorNode == zt::IpAddress::ipv6Unspecified()) msg.originatorNode = msg.senderNode;
+		msg.messageHash = msg.hash();
 
 		// Serialize the data
 		std::stringstream stream;
