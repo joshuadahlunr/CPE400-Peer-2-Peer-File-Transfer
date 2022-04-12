@@ -75,7 +75,7 @@ public:
 					// Add a message to the queue requesting all of the data be sent to the new node
 					auto syncRequest = std::make_unique<Message>();
 					syncRequest->type = Message::Type::initialSyncRequest;
-					syncRequest->originatorNode = peerIP;
+					syncRequest->originatorNode = peerIP; // Mark that data should be sent to the newly connected peer
 					MessageManager::singleton().messageQueue->emplace(2, std::move(syncRequest)); // Same priority as disconnect
 
 					std::cout << "Accepted Connection from: " << peerIP << std::endl;

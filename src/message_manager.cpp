@@ -64,7 +64,7 @@ void MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
 		std::getline(fin, sync.fileContent, '\0');
 		fin.close();
 
-		PeerManager::singleton().send(sync, m.receiverNode);
+		PeerManager::singleton().send(sync, m.originatorNode);
 	}
 }
 
