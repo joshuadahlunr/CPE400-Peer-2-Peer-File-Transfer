@@ -124,72 +124,126 @@ private:
 		break; case Message::Type::payload:{
 			auto m = std::make_unique<PayloadMessage>();
 			ar >> *m;
-			// TODO: Check hash
-			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
+
+			// Validate message hash
+			std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
+			if(m->messageHash != m->hash() + 1) {
+				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
+				// TODO: Request message resend
+				return;
+			}
 			// Payloads have a low priority
 			messageQueue->emplace(10, std::move(m));
 		}
 		break; case Message::Type::lock:{
 			auto m = std::make_unique<FileMessage>();
 			ar >> *m;
-			// TODO: Check hash
-			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
+
+			// Validate message hash
+			std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
+			if(m->messageHash != m->hash() + 1) {
+				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
+				// TODO: Request message resend
+				return;
+			}
 			// File messages have priority 5
 			messageQueue->emplace(5, std::move(m));
 		}
 		break; case Message::Type::unlock:{
 			auto m = std::make_unique<FileMessage>();
 			ar >> *m;
-			// TODO: Check hash
-			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
+
+			// Validate message hash
+			std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
+			if(m->messageHash != m->hash() + 1) {
+				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
+				// TODO: Request message resend
+				return;
+			}
 			// File messages have priority 5
 			messageQueue->emplace(5, std::move(m));
 		}
 		break; case Message::Type::deleteFile:{
 			auto m = std::make_unique<FileMessage>();
 			ar >> *m;
-			// TODO: Check hash
-			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
+
+			// Validate message hash
+			std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
+			if(m->messageHash != m->hash() + 1) {
+				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
+				// TODO: Request message resend
+				return;
+			}
 			// File messages have priority 5
 			messageQueue->emplace(5, std::move(m));
 		}
 		break; case Message::Type::create:{
 			auto m = std::make_unique<FileChangeMessage>();
 			ar >> *m;
-			// TODO: Check hash
-			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
+
+			// Validate message hash
+			std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
+			if(m->messageHash != m->hash() + 1) {
+				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
+				// TODO: Request message resend
+				return;
+			}
 			// File messages have priority 5
 			messageQueue->emplace(5, std::move(m));
 		}
 		break; case Message::Type::initialSync:{
 			auto m = std::make_unique<FileInitialSyncMessage>();
 			ar >> *m;
-			// TODO: Check hash
+
+			// Validate message hash
 			std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
+			if(m->messageHash != m->hash() + 1) {
+				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
+				// TODO: Request message resend
+				return;
+			}
 			// Syncs are executed before other file messages 4
 			messageQueue->emplace(4, std::move(m));
 		}
 		break; case Message::Type::change:{
 			auto m = std::make_unique<FileChangeMessage>();
 			ar >> *m;
-			// TODO: Check hash
-			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
+
+			// Validate message hash
+			std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
+			if(m->messageHash != m->hash() + 1) {
+				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
+				// TODO: Request message resend
+				return;
+			}
 			// File messages have priority 5
 			messageQueue->emplace(5, std::move(m));
 		}
 		break; case Message::Type::connect:{
 			auto m = std::make_unique<ConnectMessage>();
 			ar >> *m;
-			// TODO: Check hash
-			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
+
+			// Validate message hash
+			std::cout << m->messageHash << " - " << m->hash() << std::endl;
+			if(m->messageHash != m->hash()) {
+				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
+				// TODO: Request message resend
+				return;
+			}
 			// Connect has highest priority
 			messageQueue->emplace(1, std::move(m));
 		}
 		break; case Message::Type::disconnect:{
 			auto m = std::make_unique<Message>();
 			ar >> *m;
-			// TODO: Check hash
-			// std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
+		
+			// Validate message hash
+			std::cout << m->messageHash << " - " << m->hash() << std::endl;
+			if(m->messageHash != m->hash()) {
+				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
+				// TODO: Request message resend
+				return;
+			}
 			// Disconnect is processed after disconnect
 			messageQueue->emplace(2, std::move(m));
 		}
