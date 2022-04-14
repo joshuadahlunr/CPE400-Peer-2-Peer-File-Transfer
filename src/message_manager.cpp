@@ -24,18 +24,18 @@ void MessageManager::processResendRequestMessage(const ResendRequestMessage& req
 	for(auto& m: oldMessages) {
 		if(m->messageHash == request.requestedHash) {
 			switch(m->type){
-			break; case Message::Type::payload:				PeerManager::singleton().send(reference_cast<PayloadMessage>(*m), request.originatorNode);				
-			break; case Message::Type::resendRequest:		PeerManager::singleton().send(reference_cast<ResendRequestMessage>(*m), request.originatorNode);				
-			break; case Message::Type::lock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);				
-			break; case Message::Type::unlock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);				
-			break; case Message::Type::deleteFile:			PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);				
-			break; case Message::Type::create:				PeerManager::singleton().send(reference_cast<FileContentMessage>(*m), request.originatorNode);				
-			break; case Message::Type::initialSync:			PeerManager::singleton().send(reference_cast<FileInitialSyncMessage>(*m), request.originatorNode);				
-			break; case Message::Type::initialSyncRequest:	PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);				
-			break; case Message::Type::change:				PeerManager::singleton().send(reference_cast<FileChangeMessage>(*m), request.originatorNode);				
-			break; case Message::Type::connect:				PeerManager::singleton().send(reference_cast<ConnectMessage>(*m), request.originatorNode);				
-			break; case Message::Type::disconnect:			PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);				
-			break; case Message::Type::linkLost:			PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);				
+			break; case Message::Type::payload:				PeerManager::singleton().send(reference_cast<PayloadMessage>(*m), request.originatorNode);
+			break; case Message::Type::resendRequest:		PeerManager::singleton().send(reference_cast<ResendRequestMessage>(*m), request.originatorNode);
+			break; case Message::Type::lock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);
+			break; case Message::Type::unlock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);
+			break; case Message::Type::deleteFile:			PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);
+			break; case Message::Type::create:				PeerManager::singleton().send(reference_cast<FileContentMessage>(*m), request.originatorNode);
+			break; case Message::Type::initialSync:			PeerManager::singleton().send(reference_cast<FileInitialSyncMessage>(*m), request.originatorNode);
+			break; case Message::Type::initialSyncRequest:	PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);
+			break; case Message::Type::change:				PeerManager::singleton().send(reference_cast<FileChangeMessage>(*m), request.originatorNode);
+			break; case Message::Type::connect:				PeerManager::singleton().send(reference_cast<ConnectMessage>(*m), request.originatorNode);
+			break; case Message::Type::disconnect:			PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);
+			break; case Message::Type::linkLost:			PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);
 			break; default:
 				throw std::runtime_error("Unrecognized message type");
 			}
@@ -56,7 +56,7 @@ void MessageManager::processLockMessage(const FileMessage& m){
 	else
 	{
 		std::cout << "File status." << m.targetFile << std::endl;
-	
+
 		// Path exists so check to see if lock exists.
 		std::filesystem::perms check = std::filesystem::status(m.targetFile).permissions();
 		std::cout << "Owner Read: " << ((check & std::filesystem::perms::owner_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
@@ -70,63 +70,61 @@ void MessageManager::processLockMessage(const FileMessage& m){
 		std::cout << "Others Exec: " << ((check & std::filesystem::perms::others_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
 
 		// Check for read permissions.
-		if(((check & std::filesystem::perms::owner_read) != std::filesystem::perms::none) 
+		if(((check & std::filesystem::perms::owner_read) != std::filesystem::perms::none)
 			|| ((check & std::filesystem::perms::group_read) != std::filesystem::perms::none)
 			|| ((check & std::filesystem::perms::others_read) != std::filesystem::perms::none))
 		{
 			std::cout << "Owner, Others, or Group may have read permissions.\n";
-			
-			// Check to see if there are write permissions which means not locked.  
+
+			// Check to see if there are write permissions which means not locked.
 			if(((check & std::filesystem::perms::owner_write) != std::filesystem::perms::none)
 				|| ((check & std::filesystem::perms::group_write) != std::filesystem::perms::none)
 				|| ((check & std::filesystem::perms::others_write) != std::filesystem::perms::none))
-		
+
 			{
 				std::cout << "Owner, Others, or Group may have have write permissions, file not locked.\n";
-				
+
 				// Lock file by writting to file and change permissions.
-				std::filesystem::permissions(m.targetFile, std::filesystem::perms::owner_write, std::filesystem::perm_options::remove);
-				std::filesystem::permissions(m.targetFile, std::filesystem::perms::group_write, std::filesystem::perm_options::remove);
-				std::filesystem::permissions(m.targetFile, std::filesystem::perms::others_write, std::filesystem::perm_options::remove);
-				
+				constexpr auto writePerms = std::filesystem::perms::owner_write | std::filesystem::perms::group_write | std::filesystem::perms::others_write;
+				std::filesystem::permissions(m.targetFile, writePerms, std::filesystem::perm_options::remove);
+
 				// Write to file.
 				fout.write(reinterpret_cast<const char *>(&m), sizeof(m));
 				std::cout << "File has been written to, file is now locked!!!\n";
-				// Write new timestamp. 
-				fileLocks.push_back(m); 
-
-
+				// Write new timestamp.
+				fileLocks.emplace_back(m, check & writePerms);
 			}
 
 			// File has read only permissions so it is locked.
 			else
 			{
 				std::cout << "File is locked.\n";
-		
+
 				for(int i = 0; i < fileLocks.size(); i++)
 				{
 					// Find target path to get timestamp.
-						if(m.targetFile == fileLocks[i].targetFile)
+					auto& lockFile = fileLocks[i].first;
+					if(m.targetFile == lockFile.targetFile)
+					{
+						if(m.timestamp < lockFile.timestamp)
 						{
-							if(m.timestamp < fileLocks[i].timestamp)
-							{
 							// Current user has the lock, update vector.
 							std::cout << "You have the lock currently.\n";
-							fileLocks[i].timestamp = m.timestamp;
-							fileLocks[i].originatorNode = m.originatorNode;
-							fileLocks[i].targetFile = m.targetFile;
-						
-							}
-
+							lockFile.timestamp = m.timestamp;
+							lockFile.originatorNode = m.originatorNode;
+							lockFile.targetFile = m.targetFile;
 
 						}
-					
+
+
+					}
+
 				}
-				
+
 
 			}
 		}
-		
+
 	}
 }
 
@@ -149,13 +147,14 @@ void MessageManager::processUnlockMessage(const FileMessage& m){
 		{
 			std::cout << "Inside for loop\n";
 
-			if(m.targetFile == fileLocks[i].targetFile)
+			auto& lockFile = fileLocks[i].first;
+			if(m.targetFile == lockFile.targetFile)
 			{
 
 				std::cout << "Test 6:\n";
-				// Update originatorNode 
-				if(m.originatorNode == fileLocks[i].originatorNode)	
-				{	
+				// Update originatorNode
+				if(m.originatorNode == lockFile.originatorNode)
+				{
 					//if path exists check to see if lock exists.
 					std::filesystem::perms check = std::filesystem::status(m.targetFile).permissions();
 					std::cout << "Owner Read: " << ((check & std::filesystem::perms::owner_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
@@ -173,17 +172,15 @@ void MessageManager::processUnlockMessage(const FileMessage& m){
 					|| ((check & std::filesystem::perms::group_write) != std::filesystem::perms::none)
 					|| ((check & std::filesystem::perms::others_write) != std::filesystem::perms::none))
 					{
-						// File is unlocked 
+						// File is unlocked
 						std::cout << "File is unlocked" << std::endl;
-					
+
 					}
 
 					else
 					{
 						// File is locked add permissions to unlock
-						std::filesystem::permissions(m.targetFile, std::filesystem::perms::group_all, std::filesystem::perm_options::add);
-						std::filesystem::permissions(m.targetFile, std::filesystem::perms::others_all, std::filesystem::perm_options::add);
-						std::filesystem::permissions(m.targetFile, std::filesystem::perms::owner_all, std::filesystem::perm_options::add);
+						std::filesystem::permissions(m.targetFile, fileLocks[i].second, std::filesystem::perm_options::add);
 						std::filesystem::perms check = std::filesystem::status(m.targetFile).permissions();
 						std::cout << "File is now unlocked.\n";
 						std::cout << "Owner Read: " << ((check & std::filesystem::perms::owner_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
@@ -252,7 +249,7 @@ void MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
 		sync.total = size - 1;
 
 		std::cout << sync.index << " / " << sync.total << std::endl;
-		
+
 		std::ifstream fin(sync.targetFile);
 		std::getline(fin, sync.fileContent, '\0');
 		fin.close();
@@ -342,4 +339,4 @@ void MessageManager::processDisconnectMessage(const Message& m){
 	}
 
 	// TODO: free any locks held by the peer
-}	
+}
