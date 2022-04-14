@@ -14,6 +14,9 @@ struct MessageManager {
 	// The the application is mangaing
 	std::vector<std::filesystem::path>* folders;
 
+	// Variables tracking how many files we need to recieve before our state is the same as the network
+	size_t recievedInitialFiles = 0, totalInitialFiles = 1;
+
 	// Queue of messages waiting to be processed (It is a non-blocking [skiplist based] concurrent queue)
 	// NOTE: Lower priorities = faster execution
 	using Prio = std::pair<size_t, std::unique_ptr<Message>>;
@@ -124,6 +127,9 @@ struct MessageManager {
 		// Move the message into the buffer of old messages
 		oldMessages.emplace_back(std::move(msgPtr));
 	}
+
+	// Function that checks to make sure we have finished connecting to the network
+	bool isFinishedConnecting() { return recievedInitialFiles == totalInitialFiles; }
 
 private:
 	// Only the singleton can be constructed

@@ -213,6 +213,10 @@ void MessageManager::processInitialFileSyncMessage(const FileInitialSyncMessage&
 	std::cout << m.index << " / " << m.total << std::endl;
 	auto time_t = to_time_t(m.timestamp);
 
+	// Update metrics regarding the number of files we have recieved
+	totalInitialFiles = m.total;
+	recievedInitialFiles++;
+
 	// Create intermediate directories
 	auto folder = m.targetFile;
 	create_directories(folder.remove_filename());
@@ -241,7 +245,7 @@ void MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
 		sync.targetFile = paths[i];
 		sync.timestamp = std::chrono::system_clock::now();
 		sync.index = i;
-		sync.total = size - 1;
+		sync.total = size;
 
 		std::cout << sync.index << " / " << sync.total << std::endl;
 
@@ -272,6 +276,10 @@ void MessageManager::processConnectMessage(const ConnectMessage& m){
 		remove(path);
 		remove(wnts);
 	}
+
+	// Reset file counts (marking that we are not finished connecting to the network)
+	recievedInitialFiles = 0;
+	totalInitialFiles = 1;
 }
 
 // Function that handles losing our link to a peer

@@ -130,7 +130,10 @@ int main(int argc, char** argv) {
 	if(remoteIP.isValid()) {
 		peers->emplace_back(std::move(Peer::connect(remoteIP, port)));
 		PeerManager::singleton().setGatewayIP(remoteIP); // Mark the remote IP as our "gateway" to the rest of the network
-	}
+	
+	// If we are starting a network, tell the message manager that we are completely connected
+	} else
+		MessageManager::singleton().totalInitialFiles = 0;
 
 
 	// Sweep for the first time then start the main loop
@@ -140,10 +143,10 @@ int main(int argc, char** argv) {
 		auto start = std::chrono::system_clock::now();
 
 		// Generate a message with an arbitrary payload
-		PayloadMessage m;
-		m.type = Message::Type::payload;
-		std::time_t now = std::time(nullptr);
-		m.payload = std::to_string(sweeper.iteration) + std::asctime(std::localtime(&now));
+		// PayloadMessage m;
+		// m.type = Message::Type::payload;
+		// std::time_t now = std::time(nullptr);
+		// m.payload = std::to_string(sweeper.iteration) + std::asctime(std::localtime(&now));
 		// Send the payload message
 		// PeerManager::singleton().send(m);
 
@@ -153,6 +156,10 @@ int main(int argc, char** argv) {
 		// Process messages until a second has elapsed since the start of the loop
 		while(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start).count() < 1000)
 			MessageManager::singleton().processNextMessage();
+
+
+		std::cout << "connected = " << MessageManager::singleton().isFinishedConnecting() << " files = " << MessageManager::singleton().recievedInitialFiles << "/" << MessageManager::singleton().totalInitialFiles << std::endl;
+		std::cout << "dt = " << std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start).count() << std::endl;
 	}
 
 	return 0;
