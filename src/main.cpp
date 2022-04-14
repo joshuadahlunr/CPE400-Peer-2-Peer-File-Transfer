@@ -33,11 +33,25 @@ void onFileDeleted(const std::filesystem::path& path) {
 // Callback called whenever a file is fast-tracked
 void onFileFastTracked(const std::filesystem::path& path) {
 	std::cout << path << " fast tracked!" << std::endl;
+	
+	// Propigate a lock through the network
+	FileMessage m;
+	m.type = Message::Type::lock;
+	m.targetFile = path;
+	m.timestamp = convertTimepoint<std::chrono::system_clock::time_point>(last_write_time(path));
+	PeerManager::singleton().send(m); // Broadcast the message
 }
 
 // Callback called whenever a file is unfast-tracked
 void onFileUnFastTracked(const std::filesystem::path& path) {
 	std::cout << path << " UNfast tracked!" << std::endl;
+
+	// Propigate an unlock through the network
+	FileMessage m;
+	m.type = Message::Type::unlock;
+	m.targetFile = path;
+	m.timestamp = convertTimepoint<std::chrono::system_clock::time_point>(last_write_time(path));
+	PeerManager::singleton().send(m); // Broadcast the message
 }
 
 int main(int argc, char** argv) {

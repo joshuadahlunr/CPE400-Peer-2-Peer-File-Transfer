@@ -20,7 +20,7 @@ template<typename Out, typename In>
 constexpr inline Out& reference_cast(In& in) { return *((Out*) &in); }
 
 
-// Converts an arbitrary time point into a system clock time point
+// Converts an arbitrary time point into another clock's timepoint
 template <typename OutTP /* = std::chrono::system_clock::time_point */, typename InTP>
 auto convertTimepoint(InTP tp) {
 	return std::chrono::time_point_cast<typename OutTP::clock::duration>(tp - InTP::clock::now() + OutTP::clock::now());
