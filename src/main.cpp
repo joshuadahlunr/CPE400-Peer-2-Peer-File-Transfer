@@ -30,6 +30,16 @@ void onFileDeleted(const std::filesystem::path& path) {
 	std::cout << path << " deleted!" << std::endl;
 }
 
+// Callback called whenever a file is fast-tracked
+void onFileFastTracked(const std::filesystem::path& path) {
+	std::cout << path << " fast tracked!" << std::endl;
+}
+
+// Callback called whenever a file is unfast-tracked
+void onFileUnFastTracked(const std::filesystem::path& path) {
+	std::cout << path << " UNfast tracked!" << std::endl;
+}
+
 int main(int argc, char** argv) {
 	// Gracefully terminate when interrupted (ctrl + c in terminal)
 	signal(SIGINT, signalCallbackHandler);
@@ -91,7 +101,7 @@ int main(int argc, char** argv) {
 	});
 
 	// Create a filesystem sweeper that scan the folders from command line, and repoerts its results to the onFile* functions in this file
-	FilesystemSweeper sweeper{folders, onFileCreated, onFileModified, onFileDeleted};
+	FilesystemSweeper sweeper{folders, onFileCreated, onFileModified, onFileDeleted, onFileFastTracked, onFileUnFastTracked};
 	sweeper.setup();
 
 	// Wait for the node setup to finish

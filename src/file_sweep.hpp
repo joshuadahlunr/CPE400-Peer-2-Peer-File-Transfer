@@ -19,7 +19,11 @@ struct FilesystemSweeper {
 	// Function callback (return void, taking path) called when the sweeper detects that a file has been modified
 		onFileModified,
 	// Function callback (return void, taking path) called when the sweeper detects that a file has been deleted
-		onFileDeleted;
+		onFileDeleted,
+	// Function callback (return void, taking path) called when the sweeper detects that a file has been fast-tracked (locked)
+		onFileFastTracked,
+	// Function callback (return void, taking path) called when the sweeper detects that a file has been unfast-tracked (unlocked)
+		onFileUnFastTracked;
 
 	// Timestamps and counters tracking the last time every file was modified
 	std::map<std::filesystem::path, std::pair<std::filesystem::file_time_type, size_t>> timestamps;
@@ -90,6 +94,9 @@ struct FilesystemSweeper {
 					// File has been modified!
 					onFileModified(path);
 
+					// If the file wasn't already in the fast tracked list, it has been added!
+					if(fastTrackTimestamps.find(path) == fastTrackTimestamps.end())
+						onFileFastTracked(path);
 					fastTrackTimestamps[path] = pair; // Mark the file as being fast tracked
 				}
 
@@ -117,8 +124,13 @@ struct FilesystemSweeper {
 
 				removedFiles.emplace_back(path); // Mark the file as deleted
 			// If the file hasn't been modified recently (within 10 seconds), the file is no longer fast tracked
-			} else if(std::chrono::duration_cast<std::chrono::milliseconds>(now - timestamp).count() > 10'000)
+			} else if(std::chrono::duration_cast<std::chrono::milliseconds>(now - timestamp).count() > 10'000) {
+				// If the file was already fast tracked, the file has been unfast-tracked!
+				if(fastTrackTimestamps.find(path) != fastTrackTimestamps.end())
+					onFileUnFastTracked(path);
+				
 				fastTrackRemovedFiles.emplace_back(path);
+			}
 
 		}
 
