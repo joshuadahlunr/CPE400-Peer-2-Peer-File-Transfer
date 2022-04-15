@@ -24,7 +24,7 @@ bool MessageManager::validateMessageHash(const Message& m, uint8_t offset /*= 0*
 }
 
 // Function that processes a resend request
-void MessageManager::processResendRequestMessage(const ResendRequestMessage& request){
+bool MessageManager::processResendRequestMessage(const ResendRequestMessage& request){
 	// Find the message that needs to be resent in the old message cache, then resend it
 	for(auto& m: oldMessages) {
 		if(m->messageHash == request.requestedHash) {
@@ -44,16 +44,25 @@ void MessageManager::processResendRequestMessage(const ResendRequestMessage& req
 			break; default:
 				throw std::runtime_error("Unrecognized message type");
 			}
-			return;
+
+			// Message was successfully processed, no need to add back to queue
+			return true;
 		}
 	}
+
+	// Message was successfully processed, no need to add back to queue
+	return true;
 }
 
 // Function that processes a file lock
-void MessageManager::processLockMessage(const FileMessage& m){
+bool MessageManager::processLockMessage(const FileMessage& m){
+	// If we are still connecting to the network, process this message later
+	if(!isFinishedConnecting())
+		return false;
+
 	if(!exists(m.targetFile)) {
 		std::cout << "No Path\n";
-		return;
+		return true;
 	}
 
 	constexpr auto writePerms = std::filesystem::perms::owner_write | std::filesystem::perms::group_write | std::filesystem::perms::others_write;
@@ -129,10 +138,17 @@ void MessageManager::processLockMessage(const FileMessage& m){
 			}
 		}
 	}
+
+	// Message was successfully processed, no need to add back to queue
+	return true;
 }
 
 // Function that processes a file unlock
-void MessageManager::processUnlockMessage(const FileMessage& m){
+bool MessageManager::processUnlockMessage(const FileMessage& m){
+	// If we are still connecting to the network, process this message later
+	if(!isFinishedConnecting())
+		return false;
+
 	std::cout << "In unlock.\n";
 
 	std::cout << "File status." << m.targetFile << std::endl;
@@ -196,20 +212,35 @@ void MessageManager::processUnlockMessage(const FileMessage& m){
 			}
 		}
 	}
+
+	// Message was successfully processed, no need to add back to queue
+	return true;
 }
 
 // Function that processes a file delete
-void MessageManager::processDeleteFileMessage(const FileMessage& m){
+bool MessageManager::processDeleteFileMessage(const FileMessage& m){
+	// If we are still connecting to the network, process this message later
+	if(!isFinishedConnecting())
+		return false;
 
+
+	// Message was successfully processed, no need to add back to queue
+	return true;
 }
 
 // Function that processes a file create
-void MessageManager::processCreateFileMessage(const FileContentMessage& m){
+bool MessageManager::processCreateFileMessage(const FileContentMessage& m){
+	// If we are still connecting to the network, process this message later
+	if(!isFinishedConnecting())
+		return false;
 
+
+	// Message was successfully processed, no need to add back to queue
+	return true;
 }
 
 // Function that processes an initial file sync
-void MessageManager::processInitialFileSyncMessage(const FileInitialSyncMessage& m){
+bool MessageManager::processInitialFileSyncMessage(const FileInitialSyncMessage& m){
 	std::cout << m.index << " / " << m.total << std::endl;
 	auto time_t = to_time_t(m.timestamp);
 
@@ -232,10 +263,17 @@ void MessageManager::processInitialFileSyncMessage(const FileInitialSyncMessage&
 	copy(m.targetFile, wnts, std::filesystem::copy_options::update_existing);
 
 	std::cout << m.targetFile << " - " << std::ctime(&time_t) << std::endl;
+
+	// Message was successfully processed, no need to add back to queue
+	return true;
 }
 
 // Function that processes an initial file sync request
-void MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
+bool MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
+	// If we are still connecting to the network, process this message later
+	if(!isFinishedConnecting())
+		return false;
+
 	// TODO: Can we parallelize this somehow?
 	// Send the content of every managed file to the newly connected node
 	auto paths = enumerateAllFiles(*folders);
@@ -254,16 +292,26 @@ void MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
 		fin.close();
 
 		PeerManager::singleton().send(sync, m.originatorNode);
+
+		// TODO: If the file is locked also send a lock message
 	}
+
+	// Message was successfully processed, no need to add back to queue
+	return true;
 }
 
 // Function that processes a file change
-void MessageManager::processChangeFileMessage(const FileChangeMessage& m){
+bool MessageManager::processChangeFileMessage(const FileChangeMessage& m){
+	// If we are still connecting to the network, process this message later
+	if(!isFinishedConnecting())
+		return false;
 
+	// Message was successfully processed, no need to add back to queue
+	return true;
 }
 
 // Function that processes connection info from the gateway peer
-void MessageManager::processConnectMessage(const ConnectMessage& m){
+bool MessageManager::processConnectMessage(const ConnectMessage& m){
 	// Save the backup IP addresses
 	PeerManager::singleton().backupPeers = std::move(m.backupPeers);
 	// Save the list of folders the network is managing
@@ -280,10 +328,13 @@ void MessageManager::processConnectMessage(const ConnectMessage& m){
 	// Reset file counts (marking that we are not finished connecting to the network)
 	recievedInitialFiles = 0;
 	totalInitialFiles = 1;
+
+	// Message was successfully processed, no need to add back to queue
+	return true;
 }
 
 // Function that handles losing our link to a peer
-void MessageManager::processLinkLostMessage(const Message& m){
+bool MessageManager::processLinkLostMessage(const Message& m){
 	zt::IpAddress removedIP;
 	{
 		auto peerLock = PeerManager::singleton().getPeers().write_lock();
@@ -329,10 +380,17 @@ void MessageManager::processLinkLostMessage(const Message& m){
 		m.originatorNode = removedIP;
 		PeerManager::singleton().send(m); // The write lock has to be released before we send
 	}
+
+	// Message was successfully processed, no need to add back to queue
+	return true;
 }
 
 // Function that handles a peer disconnect
-void MessageManager::processDisconnectMessage(const Message& m){
+bool MessageManager::processDisconnectMessage(const Message& m){
+	// If we are still connecting to the network, process this message later
+	if(!isFinishedConnecting())
+		return false;
+
 	// Remove the disconnected Peer as a backup Peer
 	auto& backupPeers = PeerManager::singleton().backupPeers;
 	for(size_t peer = 0; peer < backupPeers.size(); peer++) {
@@ -342,4 +400,7 @@ void MessageManager::processDisconnectMessage(const Message& m){
 	}
 
 	// TODO: free any locks held by the peer
+
+	// Message was successfully processed, no need to add back to queue
+	return true;
 }

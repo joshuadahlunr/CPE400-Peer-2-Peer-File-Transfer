@@ -60,72 +60,78 @@ struct MessageManager {
 
 
 		// Process the message as the same type of message that was delivered
+		int64_t requeuePriority; // -1 indicates no requeue needed
 		switch(msgPtr->type) {
 		break; case Message::Type::payload:{
 			auto& m = reference_cast<PayloadMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "][payload]:\n" << m.payload << std::endl;
+			requeuePriority = -1;
 		}
 		break; case Message::Type::resendRequest:{
 			auto& m = reference_cast<ResendRequestMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] resend request message" <<  std::endl;
-			processResendRequestMessage(m);
+			requeuePriority = processResendRequestMessage(m) ? -1 : 0;
 		}
 		break; case Message::Type::lock:{
 			auto& m = reference_cast<FileMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] lock message" << std::endl;
-			processLockMessage(m);
+			requeuePriority = processLockMessage(m) ? -1 : 5;
 		}
 		break; case Message::Type::unlock:{
 			auto& m = reference_cast<FileMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] unlock message" << std::endl;
-			processUnlockMessage(m);
+			requeuePriority = processUnlockMessage(m) ? -1 : 5;
 		}
 		break; case Message::Type::deleteFile:{
 			auto& m = reference_cast<FileMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] delete message" << std::endl;
-			processDeleteFileMessage(m);
+			requeuePriority = processDeleteFileMessage(m) ? -1 : 5;
 		}
 		break; case Message::Type::create:{
 			auto& m = reference_cast<FileContentMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] create message" << std::endl;
-			processCreateFileMessage(m);
+			requeuePriority = processCreateFileMessage(m) ? -1 : 5;
 		}
 		break; case Message::Type::initialSync:{
 			auto& m = reference_cast<FileInitialSyncMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] sync message" << std::endl;
-			processInitialFileSyncMessage(m);
+			requeuePriority = processInitialFileSyncMessage(m) ? -1 : 4;
 		}
 		break; case Message::Type::initialSyncRequest:{
 			auto& m = reference_cast<Message>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] sync request message" << std::endl;
-			processInitialFileSyncRequestMessage(m);
+			requeuePriority = processInitialFileSyncRequestMessage(m) ? -1 : 4;
 		}
 		break; case Message::Type::change:{
 			auto& m = reference_cast<FileChangeMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] change message" << std::endl;
-			processChangeFileMessage(m);
+			requeuePriority = processChangeFileMessage(m) ? -1 : 5;
 		}
 		break; case Message::Type::connect:{
 			auto& m = reference_cast<ConnectMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] connect message" << std::endl;
-			processConnectMessage(m);
+			requeuePriority = processConnectMessage(m) ? -1 : 1;
 		}
 		break; case Message::Type::disconnect:{
 			auto& m = reference_cast<Message>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] disconnect message" << std::endl;
-			processDisconnectMessage(m);
+			requeuePriority = processDisconnectMessage(m) ? -1 : 2;
 		}
 		break; case Message::Type::linkLost:{
 			auto& m = reference_cast<Message>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] link-lost message" << std::endl;
-			processLinkLostMessage(m);
+			requeuePriority = processLinkLostMessage(m) ? -1 : 0;
 		}
 		break; default:
 			throw std::runtime_error("Unrecognized message type");
 		}
 
-		// Move the message into the buffer of old messages
-		oldMessages.emplace_back(std::move(msgPtr));
+		// If the message was successful, move the message into the buffer of old messages
+		if(requeuePriority == -1)
+			oldMessages.emplace_back(std::move(msgPtr));
+		// Otherwise move it back into the queue
+		else
+			messageQueue->emplace(requeuePriority, std::move(msgPtr));
 	}
 
 	// Function that checks to make sure we have finished connecting to the network
@@ -258,17 +264,18 @@ private:
 	}
 
 	// Functions that process individual types of messages
-	void processResendRequestMessage(const ResendRequestMessage& m);
-	void processLockMessage(const FileMessage& m);
-	void processUnlockMessage(const FileMessage& m);
-	void processDeleteFileMessage(const FileMessage& m);
-	void processCreateFileMessage(const FileContentMessage& m);
-	void processInitialFileSyncMessage(const FileInitialSyncMessage& m);
-	void processInitialFileSyncRequestMessage(const Message& m);
-	void processChangeFileMessage(const FileChangeMessage& m);
-	void processConnectMessage(const ConnectMessage& m);
-	void processLinkLostMessage(const Message& m);
-	void processDisconnectMessage(const Message& m);
+	// NOTE: They all return true if the message was successfully proccessed and false if the message needs to be readded to the queue for later processing
+	bool processResendRequestMessage(const ResendRequestMessage& m);
+	bool processLockMessage(const FileMessage& m);
+	bool processUnlockMessage(const FileMessage& m);
+	bool processDeleteFileMessage(const FileMessage& m);
+	bool processCreateFileMessage(const FileContentMessage& m);
+	bool processInitialFileSyncMessage(const FileInitialSyncMessage& m);
+	bool processInitialFileSyncRequestMessage(const Message& m);
+	bool processChangeFileMessage(const FileChangeMessage& m);
+	bool processConnectMessage(const ConnectMessage& m);
+	bool processLinkLostMessage(const Message& m);
+	bool processDisconnectMessage(const Message& m);
 };
 
 #endif // __MESSAGE_QUEUE_HPP__
