@@ -3,9 +3,23 @@
 
 #include <fstream>
 
+// Function that calculates the path to a file's lock file
 auto lockFilePath(const std::filesystem::path& p) {
 	auto lockPath = wntsPath(p);
 	return lockPath.remove_filename() / (".lock." + p.filename().string());
+}
+
+// Function that loads the data from a lock file
+auto loadLockFile(const std::filesystem::path& p) {
+	std::pair<FileMessage, std::filesystem::perms> out;
+
+	std::fstream fin(lockFilePath(p), std::ios::in | std::ios::binary);
+	boost::archive::binary_iarchive ar(fin, archiveFlags);
+	ar >> out.first;
+	ar >> out.second;
+	fin.close();
+
+	return out;
 }
 
 // Validate the provided message, returns true if the hashes match, requests a resend and returns false otherwise
@@ -22,6 +36,10 @@ bool MessageManager::validateMessageHash(const Message& m, uint8_t offset /*= 0*
 	}
 	return true;
 }
+
+
+// -- Message Processing Functions --
+
 
 // Function that processes a resend request
 bool MessageManager::processResendRequestMessage(const ResendRequestMessage& request){
@@ -116,14 +134,7 @@ bool MessageManager::processLockMessage(const FileMessage& m){
 			std::cout << "File is locked.\n";
 
 			FileMessage oldLock;
-
-			{
-				std::fstream fin(lockPath, std::ios::in | std::ios::binary);
-				boost::archive::binary_iarchive ar(fin, archiveFlags);
-				ar >> oldLock;
-				ar >> check;
-				fin.close();
-			}
+			std::tie(oldLock, check) = loadLockFile(m.targetFile);
 
 			if(m.timestamp < oldLock.timestamp) {
 				// Open lock file
@@ -159,14 +170,7 @@ bool MessageManager::processUnlockMessage(const FileMessage& m){
 	auto lockPath = lockFilePath(m.targetFile);
 	// If the lock file exists the file is locked
 	if(exists(lockPath)){
-		FileMessage oldLock;
-		std::filesystem::perms permsToAdd;
-
-		std::fstream fin(lockPath, std::ios::in | std::ios::binary);
-		boost::archive::binary_iarchive ar(fin, archiveFlags);
-		ar >> oldLock;
-		ar >> permsToAdd;
-		fin.close();
+		auto [oldLock, permsToAdd] = loadLockFile(m.targetFile);
 
 		if(m.originatorNode == oldLock.originatorNode)
 		{
@@ -293,7 +297,11 @@ bool MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
 
 		PeerManager::singleton().send(sync, m.originatorNode);
 
-		// TODO: If the file is locked also send a lock message
+		// If the file is locked also send a lock message
+		if(exists(lockFilePath(sync.targetFile))){
+			auto [lock, _] = loadLockFile(sync.targetFile);
+			PeerManager::singleton().send(lock, m.originatorNode);
+		}
 	}
 
 	// Message was successfully processed, no need to add back to queue
@@ -399,7 +407,15 @@ bool MessageManager::processDisconnectMessage(const Message& m){
 			backupPeers.erase(backupPeers.begin() + peer);
 	}
 
-	// TODO: free any locks held by the peer
+	// Send ourselves an unlock message for every file (any files locked by different peers should have the message rejected)
+	auto paths = enumerateAllFiles(*folders);
+	for(auto& path: paths) {
+		FileMessage unlock;
+		unlock.type = Message::Type::unlock;
+		unlock.targetFile = path;
+		unlock.originatorNode = m.originatorNode; // Mark that the disconnecting node is requesting the unlock
+		PeerManager::singleton().send(unlock, zt::IpAddress::ipv6Loopback()); // Loopback = only send to self
+	}
 
 	// Message was successfully processed, no need to add back to queue
 	return true;
