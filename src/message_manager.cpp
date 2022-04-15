@@ -227,6 +227,19 @@ bool MessageManager::processDeleteFileMessage(const FileMessage& m){
 	if(!isFinishedConnecting())
 		return false;
 
+	// Make sure the file isn't locked
+	if(exists(lockFilePath(m.targetFile))) {
+		auto [lock, _] = loadLockFile(m.targetFile);
+
+		// The file can't be deleted because a lock already exists
+		if(lock.originatorNode != ZeroTierNode::singleton().getIP())
+			return true;
+	}
+
+	// Delete the file, its backup, and its lock
+	remove(m.targetFile);
+	remove(lockFilePath(m.targetFile));
+	remove(wntsPath(m.targetFile));
 
 	// Message was successfully processed, no need to add back to queue
 	return true;

@@ -28,6 +28,13 @@ void onFileModified(const std::filesystem::path& path) {
 // Callback called whenever a file is deleted
 void onFileDeleted(const std::filesystem::path& path) {
 	std::cout << path << " deleted!" << std::endl;
+
+	// Propigate the file's deletion
+	FileMessage m;
+	m.type = Message::Type::deleteFile;
+	m.targetFile = path;
+	m.timestamp = std::chrono::system_clock::now();
+	PeerManager::singleton().send(m); // Broadcast the message
 }
 
 // Callback called whenever a file is fast-tracked
