@@ -3,6 +3,47 @@
 
 #include <fstream>
 
+// Validate the provided message, returns true if the hashes match, requests a resend and returns false otherwise
+bool MessageManager::validateMessageHash(const Message& m, uint8_t offset /*= 0*/) const {
+	std::cout << m.messageHash << " - " << m.hash() + offset << std::endl;
+	if(m.messageHash != m.hash() + offset) {
+		std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
+		ResendRequestMessage resend;
+		resend.type = Message::Type::resendRequest;
+		resend.requestedHash = m.change;
+		// Request that the message be resent by its sender
+		PeerManager::singleton().send(resend, m.senderNode);
+		return false;
+	}
+	return true;
+}
+
+// Function that processes a resend request
+void MessageManager::processResendRequestMessage(const ResendRequestMessage& request){
+	// Find the message that needs to be resent in the old message cache, then resend it
+	for(auto& m: oldMessages) {
+		if(m->messageHash == request.requestedHash) {
+			switch(m->type){
+			break; case Message::Type::payload:				PeerManager::singleton().send(reference_cast<PayloadMessage>(*m), request.originatorNode);				
+			break; case Message::Type::resendRequest:		PeerManager::singleton().send(reference_cast<ResendRequestMessage>(*m), request.originatorNode);				
+			break; case Message::Type::lock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);				
+			break; case Message::Type::unlock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);				
+			break; case Message::Type::deleteFile:			PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);				
+			break; case Message::Type::create:				PeerManager::singleton().send(reference_cast<FileContentMessage>(*m), request.originatorNode);				
+			break; case Message::Type::initialSync:			PeerManager::singleton().send(reference_cast<FileInitialSyncMessage>(*m), request.originatorNode);				
+			break; case Message::Type::initialSyncRequest:	PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);				
+			break; case Message::Type::change:				PeerManager::singleton().send(reference_cast<FileChangeMessage>(*m), request.originatorNode);				
+			break; case Message::Type::connect:				PeerManager::singleton().send(reference_cast<ConnectMessage>(*m), request.originatorNode);				
+			break; case Message::Type::disconnect:			PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);				
+			break; case Message::Type::linkLost:			PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);				
+			break; default:
+				throw std::runtime_error("Unrecognized message type");
+			}
+			return;
+		}
+	}
+}
+
 // Function that processes a file lock
 void MessageManager::processLockMessage(const FileMessage& m){
 

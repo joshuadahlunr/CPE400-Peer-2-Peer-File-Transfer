@@ -24,8 +24,8 @@ struct MessageManager {
 	};
 	mutable monitor<std::priority_queue<Prio, std::vector<Prio>, PrioComp>> messageQueue;
 
-	// Circular buffer that maintains a record of the past 50 messages that have been recieved or sent
-	finalizeable_circular_buffer_array<std::unique_ptr<Message>, 50> oldMessages;
+	// Circular buffer that maintains a record of the past 100 messages that have been recieved or sent
+	finalizeable_circular_buffer_array<std::unique_ptr<Message>, 100> oldMessages;
 
 
 
@@ -61,6 +61,11 @@ struct MessageManager {
 		break; case Message::Type::payload:{
 			auto& m = reference_cast<PayloadMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "][payload]:\n" << m.payload << std::endl;
+		}
+		break; case Message::Type::resendRequest:{
+			auto& m = reference_cast<ResendRequestMessage>(*msgPtr);
+			std::cout << "[" << m.originatorNode << "] resend request message" <<  std::endl;
+			processResendRequestMessage(m);
 		}
 		break; case Message::Type::lock:{
 			auto& m = reference_cast<FileMessage>(*msgPtr);
@@ -124,6 +129,10 @@ private:
 	// Only the singleton can be constructed
 	MessageManager() {}
 
+	// Validate the provided message, returns true if the hashes match, requests a resend and returns false otherwise
+	bool validateMessageHash(const Message& m, uint8_t offset = 0) const;
+
+
 	// Function that deserializes a message received from the network and adds it to the message queue
 	void deserializeMessage(const std::span<std::byte> data) const {
 		// Extract the type of message
@@ -142,26 +151,28 @@ private:
 			ar >> *m;
 
 			// Validate message hash
-			std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
-			if(m->messageHash != m->hash() + 1) {
-				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
-				// TODO: Request message resend
+			if(!validateMessageHash(*m))
 				return;
-			}
 			// Payloads have a low priority
 			messageQueue->emplace(10, std::move(m));
+		}
+		break; case Message::Type::resendRequest:{
+			auto m = std::make_unique<ResendRequestMessage>();
+			ar >> *m;
+
+			// Validate message hash
+			if(!validateMessageHash(*m))
+				return;
+			// Resend requests are processed before anything else
+			messageQueue->emplace(0, std::move(m));
 		}
 		break; case Message::Type::lock:{
 			auto m = std::make_unique<FileMessage>();
 			ar >> *m;
 
 			// Validate message hash
-			std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
-			if(m->messageHash != m->hash() + 1) {
-				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
-				// TODO: Request message resend
+			if(!validateMessageHash(*m, 1))
 				return;
-			}
 			// File messages have priority 5
 			messageQueue->emplace(5, std::move(m));
 		}
@@ -170,12 +181,8 @@ private:
 			ar >> *m;
 
 			// Validate message hash
-			std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
-			if(m->messageHash != m->hash() + 1) {
-				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
-				// TODO: Request message resend
+			if(!validateMessageHash(*m, 1))
 				return;
-			}
 			// File messages have priority 5
 			messageQueue->emplace(5, std::move(m));
 		}
@@ -184,12 +191,8 @@ private:
 			ar >> *m;
 
 			// Validate message hash
-			std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
-			if(m->messageHash != m->hash() + 1) {
-				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
-				// TODO: Request message resend
+			if(!validateMessageHash(*m, 1))
 				return;
-			}
 			// File messages have priority 5
 			messageQueue->emplace(5, std::move(m));
 		}
@@ -198,12 +201,8 @@ private:
 			ar >> *m;
 
 			// Validate message hash
-			std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
-			if(m->messageHash != m->hash() + 1) {
-				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
-				// TODO: Request message resend
+			if(!validateMessageHash(*m, 1))
 				return;
-			}
 			// File messages have priority 5
 			messageQueue->emplace(5, std::move(m));
 		}
@@ -212,12 +211,8 @@ private:
 			ar >> *m;
 
 			// Validate message hash
-			std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
-			if(m->messageHash != m->hash() + 1) {
-				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
-				// TODO: Request message resend
+			if(!validateMessageHash(*m, 1))
 				return;
-			}
 			// Syncs are executed before other file messages 4
 			messageQueue->emplace(4, std::move(m));
 		}
@@ -226,12 +221,8 @@ private:
 			ar >> *m;
 
 			// Validate message hash
-			std::cout << m->messageHash << " - " << m->hash() + 1 << std::endl;
-			if(m->messageHash != m->hash() + 1) {
-				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
-				// TODO: Request message resend
+			if(!validateMessageHash(*m, 1))
 				return;
-			}
 			// File messages have priority 5
 			messageQueue->emplace(5, std::move(m));
 		}
@@ -240,27 +231,19 @@ private:
 			ar >> *m;
 
 			// Validate message hash
-			std::cout << m->messageHash << " - " << m->hash() << std::endl;
-			if(m->messageHash != m->hash()) {
-				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
-				// TODO: Request message resend
+			if(!validateMessageHash(*m))
 				return;
-			}
 			// Connect has highest priority
 			messageQueue->emplace(1, std::move(m));
 		}
 		break; case Message::Type::disconnect:{
 			auto m = std::make_unique<Message>();
 			ar >> *m;
-		
+
 			// Validate message hash
-			std::cout << m->messageHash << " - " << m->hash() << std::endl;
-			if(m->messageHash != m->hash()) {
-				std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
-				// TODO: Request message resend
+			if(!validateMessageHash(*m))
 				return;
-			}
-			// Disconnect is processed after disconnect
+			// Disconnect is processed after connect
 			messageQueue->emplace(2, std::move(m));
 		}
 		break; default:
@@ -269,6 +252,7 @@ private:
 	}
 
 	// Functions that process individual types of messages
+	void processResendRequestMessage(const ResendRequestMessage& m);
 	void processLockMessage(const FileMessage& m);
 	void processUnlockMessage(const FileMessage& m);
 	void processDeleteFileMessage(const FileMessage& m);

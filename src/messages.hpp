@@ -58,7 +58,7 @@ struct Message
 {
 	friend class boost::serialization::access;
 	// Action flag must be enumerator.
-	enum Type : uint8_t {invalid = 0, lock, unlock, deleteFile, create, initialSync, initialSyncRequest, change, connect, disconnect, payload, linkLost} type;
+	enum Type : uint8_t {invalid = 0, lock, unlock, deleteFile, create, initialSync, initialSyncRequest, change, connect, disconnect, payload, resendRequest, linkLost} type;
 	// IP of the destination (may be unspecified to broadcast) node
 	zt::IpAddress receiverNode;
 	// IP of the source of the previous hop.
@@ -78,7 +78,7 @@ struct Message
 		ar& messageHash;
 	}
 
-	size_t hash() {
+	size_t hash() const {
 		std::string str = hashString();
 		size_t hash = 0;
 		for(char c: str)
@@ -87,7 +87,7 @@ struct Message
 		return hash;
 	}
 protected:
-	virtual std::string hashString() {
+	virtual std::string hashString() const {
 		return std::to_string((int)type)
 			+ receiverNode.toString()
 			+ originatorNode.toString();
@@ -109,7 +109,23 @@ struct PayloadMessage : Message {
 	}
 
 protected:
-	std::string hashString() override { return Message::hashString() + payload; }
+	std::string hashString() const override { return Message::hashString() + payload; }
+};
+
+struct ResendRequestMessage : Message {
+	friend class boost::serialization::access;
+	// Hash of the message that should be resent
+	size_t requestedHash;
+
+	template <typename Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar& boost::serialization::base_object<Message>(*this);
+		ar& requestedHash;
+	}
+
+protected:
+	std::string hashString() const override { return Message::hashString() + std::to_string(requestedHash); }
 };
 
 struct FileMessage : Message
@@ -147,7 +163,7 @@ struct FileMessage : Message
     BOOST_SERIALIZATION_SPLIT_MEMBER()
 
 protected:
-	std::string hashString() override {
+	std::string hashString() const override {
 		auto time_t = to_time_t(timestamp);
 		return Message::hashString()
 			+ targetFile.string()
@@ -168,7 +184,7 @@ struct FileContentMessage : FileMessage
 	}
 
 protected:
-	std::string hashString() override { return FileMessage::hashString() + fileContent; }
+	std::string hashString() const override { return FileMessage::hashString() + fileContent; }
 };
 
 struct FileInitialSyncMessage: FileContentMessage {
@@ -186,7 +202,7 @@ struct FileInitialSyncMessage: FileContentMessage {
 	}
 
 protected:
-	std::string hashString() override { return FileContentMessage::hashString() + std::to_string(total) + std::to_string(index); }
+	std::string hashString() const override { return FileContentMessage::hashString() + std::to_string(total) + std::to_string(index); }
 };
 
 struct FileChangeMessage : FileMessage
@@ -203,7 +219,7 @@ struct FileChangeMessage : FileMessage
 	}
 
 protected:
-	std::string hashString() override { return FileMessage::hashString() + fChange; }
+	std::string hashString() const override { return FileMessage::hashString() + fChange; }
 };
 
 struct ConnectMessage : Message {
@@ -220,7 +236,7 @@ struct ConnectMessage : Message {
 		ar& backupPeers;
 	}
 
-	std::string hashString() override {
+	std::string hashString() const override {
 		std::string hash = Message::hashString();
 		for(auto& [ip, port]: backupPeers)
 			hash += ip.toString() + std::to_string(port);
