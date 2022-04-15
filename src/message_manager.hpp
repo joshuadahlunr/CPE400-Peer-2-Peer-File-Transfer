@@ -32,6 +32,14 @@ struct MessageManager {
 	using Prio = std::pair<size_t, std::unique_ptr<Message>>;
 	struct PrioComp {
 		bool operator() (const Prio& a, const Prio& b) {
+			// If the two messages have the same priority, and are file messages, sort them according to their timestamps
+			if(a.first == b.first) {
+				constexpr auto fileTypes = Message::Type::lock | Message::Type::unlock | Message::Type::deleteFile | Message::Type::create | Message::Type::initialSync | Message::Type::change;
+				if(a.second->type & fileTypes && b.second->type & fileTypes)
+					return std::chrono::duration_cast<std::chrono::nanoseconds>(
+						reference_cast<FileMessage>(*a.second).timestamp - reference_cast<FileMessage>(*b.second).timestamp
+					).count() < 0; // If a should come first, its timestamp will be smaller and thus the difference will be negative
+			}
 			return a.first > b.first;
 		}
 	};
@@ -80,57 +88,57 @@ struct MessageManager {
 		break; case Message::Type::resendRequest:{
 			auto& m = reference_cast<ResendRequestMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] resend request message" <<  std::endl;
-			requeuePriority = processResendRequestMessage(m) ? -1 : resendPriority;
+			requeuePriority = processResendRequestMessage(m) ? -1 : resendPriority + 1;
 		}
 		break; case Message::Type::lock:{
 			auto& m = reference_cast<FileMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] lock message" << std::endl;
-			requeuePriority = processLockMessage(m) ? -1 : lockPriority;
+			requeuePriority = processLockMessage(m) ? -1 : lockPriority + 1;
 		}
 		break; case Message::Type::unlock:{
 			auto& m = reference_cast<FileMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] unlock message" << std::endl;
-			requeuePriority = processUnlockMessage(m) ? -1 : lockPriority;
+			requeuePriority = processUnlockMessage(m) ? -1 : lockPriority + 1;
 		}
 		break; case Message::Type::deleteFile:{
 			auto& m = reference_cast<FileMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] delete message" << std::endl;
-			requeuePriority = processDeleteFileMessage(m) ? -1 : filePriority;
+			requeuePriority = processDeleteFileMessage(m) ? -1 : filePriority + 1;
 		}
 		break; case Message::Type::create:{
 			auto& m = reference_cast<FileContentMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] create message" << std::endl;
-			requeuePriority = processCreateFileMessage(m) ? -1 : filePriority;
+			requeuePriority = processContentFileMessage(m) ? -1 : filePriority + 1;
 		}
 		break; case Message::Type::initialSync:{
 			auto& m = reference_cast<FileInitialSyncMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] sync message" << std::endl;
-			requeuePriority = processInitialFileSyncMessage(m) ? -1 : lockPriority;
+			requeuePriority = processInitialFileSyncMessage(m) ? -1 : lockPriority + 1;
 		}
 		break; case Message::Type::initialSyncRequest:{
 			auto& m = reference_cast<Message>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] sync request message" << std::endl;
-			requeuePriority = processInitialFileSyncRequestMessage(m) ? -1 : lockPriority;
+			requeuePriority = processInitialFileSyncRequestMessage(m) ? -1 : lockPriority + 1;
 		}
 		break; case Message::Type::change:{
 			auto& m = reference_cast<FileChangeMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] change message" << std::endl;
-			requeuePriority = processChangeFileMessage(m) ? -1 : filePriority;
+			requeuePriority = processChangeFileMessage(m) ? -1 : filePriority + 1;
 		}
 		break; case Message::Type::connect:{
 			auto& m = reference_cast<ConnectMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] connect message" << std::endl;
-			requeuePriority = processConnectMessage(m) ? -1 : connectPriority;
+			requeuePriority = processConnectMessage(m) ? -1 : connectPriority + 1;
 		}
 		break; case Message::Type::disconnect:{
 			auto& m = reference_cast<Message>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] disconnect message" << std::endl;
-			requeuePriority = processDisconnectMessage(m) ? -1 : disconnectPriority;
+			requeuePriority = processDisconnectMessage(m) ? -1 : disconnectPriority + 1;
 		}
 		break; case Message::Type::linkLost:{
 			auto& m = reference_cast<Message>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] link-lost message" << std::endl;
-			requeuePriority = processLinkLostMessage(m) ? -1 : resendPriority;
+			requeuePriority = processLinkLostMessage(m) ? -1 : resendPriority + 1;
 		}
 		break; default:
 			throw std::runtime_error("Unrecognized message type");
