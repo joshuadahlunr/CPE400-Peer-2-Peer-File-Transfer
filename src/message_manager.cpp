@@ -94,7 +94,7 @@ bool MessageManager::processLockMessage(const FileMessage& m) {
 	if((check & readPerms) != std::filesystem::perms::none) {
 		// Check to see if there are write permissions which means not locked.
 		if((check & writePerms) != std::filesystem::perms::none) {
-			// Lock file by writting to file and change permissions.
+			// Lock file by writing to file and change permissions.
 			std::filesystem::permissions(m.targetFile, writePerms, std::filesystem::perm_options::remove);
 
 			// Open lock file
@@ -217,9 +217,9 @@ bool MessageManager::processContentFileMessage(const FileContentMessage& m) {
 
 // Function that processes an initial file sync
 bool MessageManager::processInitialFileSyncMessage(const FileInitialSyncMessage& m) {
-	// Update metrics regarding the number of files we have recieved
+	// Update metrics regarding the number of files we have received
 	totalInitialFiles = m.total;
-	recievedInitialFiles++;
+	receivedInitialFiles++;
 
 	// Create intermediate directories
 	auto folder = m.targetFile;
@@ -307,7 +307,7 @@ bool MessageManager::processConnectMessage(const ConnectMessage& m) {
 	}
 
 	// Reset file counts (marking that we are not finished connecting to the network)
-	recievedInitialFiles = 0;
+	receivedInitialFiles = 0;
 	totalInitialFiles = 1;
 
 	// Message was successfully processed, no need to add back to queue

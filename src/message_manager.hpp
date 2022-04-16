@@ -24,8 +24,8 @@ struct MessageManager {
 	// The the application is mangaing
 	std::vector<std::filesystem::path>* folders;
 
-	// Variables tracking how many files we need to recieve before our state is the same as the network
-	size_t recievedInitialFiles = 0, totalInitialFiles = 1;
+	// Variables tracking how many files we need to receive before our state is the same as the network
+	size_t receivedInitialFiles = 0, totalInitialFiles = 1;
 
 	// Queue of messages waiting to be processed (It is a non-blocking [skiplist based] concurrent queue)
 	// NOTE: Lower priorities = faster execution
@@ -45,7 +45,7 @@ struct MessageManager {
 	};
 	mutable monitor<std::priority_queue<Prio, std::vector<Prio>, PrioComp>> messageQueue;
 
-	// Circular buffer that maintains a record of the past 100 messages that have been recieved or sent
+	// Circular buffer that maintains a record of the past 100 messages that have been received or sent
 	finalizeable_circular_buffer_array<std::unique_ptr<Message>, 100> oldMessages;
 
 
@@ -153,7 +153,7 @@ struct MessageManager {
 	}
 
 	// Function that checks to make sure we have finished connecting to the network
-	bool isFinishedConnecting() { return recievedInitialFiles == totalInitialFiles; }
+	bool isFinishedConnecting() { return receivedInitialFiles == totalInitialFiles; }
 
 private:
 	// Only the singleton can be constructed
@@ -283,7 +283,7 @@ private:
 	}
 
 	// Functions that process individual types of messages
-	// NOTE: They all return true if the message was successfully proccessed and false if the message needs to be readded to the queue for later processing
+	// NOTE: They all return true if the message was successfully processed and false if the message needs to be readded to the queue for later processing
 	bool processResendRequestMessage(const ResendRequestMessage& m);
 	bool processLockMessage(const FileMessage& m);
 	bool processUnlockMessage(const FileMessage& m);

@@ -95,7 +95,7 @@ protected:
 // Some messages without unique subclassess use the originator node to mark the node that the network can no longer see.
 
 
-// Message carring an aribtrary string message (mostly used for debugging)
+// Message carring an arbitrary string message (mostly used for debugging)
 struct PayloadMessage : Message {
 	friend class boost::serialization::access;
 	// Arbitrary data this message carries as a payload
@@ -184,7 +184,7 @@ protected:
 };
 
 
-// File inital sync message, a content message with additional information indicating how many files need to be recieved before our state is synced with the network
+// File initial sync message, a content message with additional information indicating how many files need to be received before our state is synced with the network
 struct FileInitialSyncMessage: FileContentMessage {
 	// Variable tracking the total number of files to be synced
 	size_t total,
@@ -218,7 +218,7 @@ protected:
 	std::string hashString() const override { return FileMessage::hashString() + fChange; }
 };
 
-// Message providing extra infromation needed when we connect: backup gateway ips and the paths we should be sweeping
+// Message providing extra information needed when we connect: backup gateway ips and the paths we should be sweeping
 struct ConnectMessage : Message {
 	// List containing backup IPs
 	std::vector<std::pair<zt::IpAddress, uint16_t>> backupPeers;

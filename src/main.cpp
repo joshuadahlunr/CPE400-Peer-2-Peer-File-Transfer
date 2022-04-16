@@ -18,7 +18,7 @@ void signalCallbackHandler(int signum) {
 
 // Callback called whenever a file is created
 void onFileCreated(const std::filesystem::path& path) {
-	// Propigate the file's creation
+	// Propagate the file's creation
 	FileContentMessage m;
 	m.type = Message::Type::contentChange;
 	m.targetFile = path;
@@ -39,7 +39,7 @@ void onFileModified(const std::filesystem::path& path) {
 
 // Callback called whenever a file is deleted
 void onFileDeleted(const std::filesystem::path& path) {
-	// Propigate the file's deletion
+	// Propagate the file's deletion
 	FileMessage m;
 	m.type = Message::Type::deleteFile;
 	m.targetFile = path;
@@ -49,7 +49,7 @@ void onFileDeleted(const std::filesystem::path& path) {
 
 // Callback called whenever a file is fast-tracked
 void onFileFastTracked(const std::filesystem::path& path) {
-	// Propigate a lock through the network
+	// Propagate a lock through the network
 	FileMessage m;
 	m.type = Message::Type::lock;
 	m.targetFile = path;
@@ -59,7 +59,7 @@ void onFileFastTracked(const std::filesystem::path& path) {
 
 // Callback called whenever a file is unfast-tracked
 void onFileUnFastTracked(const std::filesystem::path& path) {
-	// Propigate an unlock through the network
+	// Propagate an unlock through the network
 	FileMessage m;
 	m.type = Message::Type::unlock;
 	m.targetFile = path;
