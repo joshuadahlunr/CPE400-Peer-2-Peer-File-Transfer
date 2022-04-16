@@ -2,7 +2,6 @@
 #include "peer_manager.hpp"
 #include "message_manager.hpp"
 #include "file_sweep.hpp"
-#include "diff.hpp"
 #include <csignal>
 #include <Argos/Argos.hpp>
 #include <boost/algorithm/string.hpp>
@@ -16,8 +15,8 @@ void signalCallbackHandler(int signum) {
 }
 
 
-// Callback called whenever a file is created
-void onFileCreated(const std::filesystem::path& path) {
+// Callback called whenever a file is created or modified
+void onFileCreatedOrModified(const std::filesystem::path& path) {
 	// Propagate the file's creation
 	FileContentMessage m;
 	m.type = Message::Type::contentChange;
@@ -30,11 +29,6 @@ void onFileCreated(const std::filesystem::path& path) {
 	fin.close();
 
 	PeerManager::singleton().send(m); // Broadcast the message
-}
-
-// Callback called whenever a file is modified
-void onFileModified(const std::filesystem::path& path) {
-
 }
 
 // Callback called whenever a file is deleted
@@ -120,7 +114,7 @@ int main(int argc, char** argv) {
 	});
 
 	// Create a filesystem sweeper that scan the folders from command line, and repoerts its results to the onFile* functions in this file
-	FilesystemSweeper sweeper{folders, onFileCreated, onFileCreated, onFileDeleted, onFileFastTracked, onFileUnFastTracked};
+	FilesystemSweeper sweeper{folders, onFileCreatedOrModified, onFileCreatedOrModified, onFileDeleted, onFileFastTracked, onFileUnFastTracked};
 	sweeper.setup();
 
 	// Wait for the node setup to finish

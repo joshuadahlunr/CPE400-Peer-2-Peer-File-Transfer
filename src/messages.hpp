@@ -56,7 +56,7 @@ BOOST_SERIALIZATION_SPLIT_FREE(zt::IpAddress)
 struct Message {
 	friend class boost::serialization::access;
 	// Action flag must be enumerator.
-	enum Type : uint8_t {invalid = 0, lock, unlock, deleteFile, contentChange, initialSync, initialSyncRequest, change, connect, disconnect, payload, resendRequest, linkLost} type;
+	enum Type : uint8_t {invalid = 0, lock, unlock, deleteFile, contentChange, initialSync, initialSyncRequest, connect, disconnect, payload, resendRequest, linkLost} type;
 	// IP of the destination (may be unspecified to broadcast) node
 	zt::IpAddress receiverNode;
 	// IP of the source of the previous hop.
@@ -200,22 +200,6 @@ struct FileInitialSyncMessage: FileContentMessage {
 
 protected:
 	std::string hashString() const override { return FileContentMessage::hashString() + std::to_string(total) + std::to_string(index); }
-};
-
-// File message carrying a list of changes that were made to the file
-struct FileChangeMessage : FileMessage {
-	//File content changed.
-	std::string fChange;
-
-
-	template <typename Archive>
-	void serialize(Archive& ar, const unsigned int version) {
-		ar& boost::serialization::base_object<FileMessage>(*this);
-		ar& fChange;
-	}
-
-protected:
-	std::string hashString() const override { return FileMessage::hashString() + fChange; }
 };
 
 // Message providing extra information needed when we connect: backup gateway ips and the paths we should be sweeping

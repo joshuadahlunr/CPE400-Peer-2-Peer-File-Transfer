@@ -34,7 +34,7 @@ struct MessageManager {
 		bool operator() (const Prio& a, const Prio& b) {
 			// If the two messages have the same priority, and are file messages, sort them according to their timestamps
 			if(a.first == b.first) {
-				constexpr auto fileTypes = Message::Type::lock | Message::Type::unlock | Message::Type::deleteFile | Message::Type::contentChange | Message::Type::initialSync | Message::Type::change;
+				constexpr auto fileTypes = Message::Type::lock | Message::Type::unlock | Message::Type::deleteFile | Message::Type::contentChange | Message::Type::initialSync;
 				if(a.second->type & fileTypes && b.second->type & fileTypes)
 					return std::chrono::duration_cast<std::chrono::nanoseconds>(
 						reference_cast<FileMessage>(*a.second).timestamp - reference_cast<FileMessage>(*b.second).timestamp
@@ -120,12 +120,7 @@ struct MessageManager {
 			std::cout << "[" << m.originatorNode << "] sync request message" << std::endl;
 			requeuePriority = processInitialFileSyncRequestMessage(m) ? -1 : lockPriority + 1;
 		}
-		break; case Message::Type::change: {
-			auto& m = reference_cast<FileChangeMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] change " << m.targetFile << std::endl;
-			requeuePriority = processChangeFileMessage(m) ? -1 : filePriority + 1;
-		}
-		break; case Message::Type::connect: {
+		break; case Message::Type::connect:{
 			auto& m = reference_cast<ConnectMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] connect message" << std::endl;
 			requeuePriority = processConnectMessage(m) ? -1 : connectPriority + 1;
@@ -247,17 +242,7 @@ private:
 			// Syncs are executed before other file messages 4
 			messageQueue->emplace(lockPriority, std::move(m));
 		}
-		break; case Message::Type::change: {
-			auto m = std::make_unique<FileChangeMessage>();
-			ar >> *m;
-
-			// Validate message hash
-			if(!validateMessageHash(*m, 1))
-				return;
-			// File messages have priority 5
-			messageQueue->emplace(filePriority, std::move(m));
-		}
-		break; case Message::Type::connect: {
+		break; case Message::Type::connect:{
 			auto m = std::make_unique<ConnectMessage>();
 			ar >> *m;
 
@@ -291,7 +276,6 @@ private:
 	bool processContentFileMessage(const FileContentMessage& m);
 	bool processInitialFileSyncMessage(const FileInitialSyncMessage& m);
 	bool processInitialFileSyncRequestMessage(const Message& m);
-	bool processChangeFileMessage(const FileChangeMessage& m);
 	bool processConnectMessage(const ConnectMessage& m);
 	bool processLinkLostMessage(const Message& m);
 	bool processDisconnectMessage(const Message& m);

@@ -54,7 +54,6 @@ bool MessageManager::processResendRequestMessage(const ResendRequestMessage& req
 			break; case Message::Type::contentChange:		PeerManager::singleton().send(reference_cast<FileContentMessage>(*m), request.originatorNode);
 			break; case Message::Type::initialSync:			PeerManager::singleton().send(reference_cast<FileInitialSyncMessage>(*m), request.originatorNode);
 			break; case Message::Type::initialSyncRequest:	PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);
-			break; case Message::Type::change:				PeerManager::singleton().send(reference_cast<FileChangeMessage>(*m), request.originatorNode);
 			break; case Message::Type::connect:				PeerManager::singleton().send(reference_cast<ConnectMessage>(*m), request.originatorNode);
 			break; case Message::Type::disconnect:			PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);
 			break; case Message::Type::linkLost:			PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);
@@ -266,25 +265,6 @@ bool MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
 			auto [lock, _] = loadLockFile(sync.targetFile);
 			PeerManager::singleton().send(lock, m.originatorNode);
 		}
-	}
-
-	// Message was successfully processed, no need to add back to queue
-	return true;
-}
-
-// Function that processes a file change
-bool MessageManager::processChangeFileMessage(const FileChangeMessage& m) {
-	// If we are still connecting to the network, process this message later
-	if(!isFinishedConnecting())
-		return false;
-
-	// Make sure the file isn't locked
-	if(exists(lockFilePath(m.targetFile))) {
-		auto [lock, _] = loadLockFile(m.targetFile);
-
-		// The file can't be deleted because a lock already exists
-		if(lock.originatorNode != ZeroTierNode::singleton().getIP())
-			return true;
 	}
 
 	// Message was successfully processed, no need to add back to queue
