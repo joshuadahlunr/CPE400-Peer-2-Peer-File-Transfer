@@ -34,7 +34,7 @@ struct MessageManager {
 		bool operator() (const Prio& a, const Prio& b) {
 			// If the two messages have the same priority, and are file messages, sort them according to their timestamps
 			if(a.first == b.first) {
-				constexpr auto fileTypes = Message::Type::lock | Message::Type::unlock | Message::Type::deleteFile | Message::Type::create | Message::Type::initialSync | Message::Type::change;
+				constexpr auto fileTypes = Message::Type::lock | Message::Type::unlock | Message::Type::deleteFile | Message::Type::contentChange | Message::Type::initialSync | Message::Type::change;
 				if(a.second->type & fileTypes && b.second->type & fileTypes)
 					return std::chrono::duration_cast<std::chrono::nanoseconds>(
 						reference_cast<FileMessage>(*a.second).timestamp - reference_cast<FileMessage>(*b.second).timestamp
@@ -92,27 +92,27 @@ struct MessageManager {
 		}
 		break; case Message::Type::lock:{
 			auto& m = reference_cast<FileMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] lock message" << std::endl;
+			std::cout << "[" << m.originatorNode << "] lock " << m.targetFile << std::endl;
 			requeuePriority = processLockMessage(m) ? -1 : lockPriority + 1;
 		}
 		break; case Message::Type::unlock:{
 			auto& m = reference_cast<FileMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] unlock message" << std::endl;
+			std::cout << "[" << m.originatorNode << "] unlock " << m.targetFile << std::endl;
 			requeuePriority = processUnlockMessage(m) ? -1 : lockPriority + 1;
 		}
 		break; case Message::Type::deleteFile:{
 			auto& m = reference_cast<FileMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] delete message" << std::endl;
+			std::cout << "[" << m.originatorNode << "] delete " << m.targetFile << std::endl;
 			requeuePriority = processDeleteFileMessage(m) ? -1 : filePriority + 1;
 		}
-		break; case Message::Type::create:{
+		break; case Message::Type::contentChange:{
 			auto& m = reference_cast<FileContentMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] create message" << std::endl;
+			std::cout << "[" << m.originatorNode << "] create " << m.targetFile << std::endl;
 			requeuePriority = processContentFileMessage(m) ? -1 : filePriority + 1;
 		}
 		break; case Message::Type::initialSync:{
 			auto& m = reference_cast<FileInitialSyncMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] sync message" << std::endl;
+			std::cout << "[" << m.originatorNode << "] sync " << m.targetFile << std::endl;
 			requeuePriority = processInitialFileSyncMessage(m) ? -1 : lockPriority + 1;
 		}
 		break; case Message::Type::initialSyncRequest:{
@@ -122,7 +122,7 @@ struct MessageManager {
 		}
 		break; case Message::Type::change:{
 			auto& m = reference_cast<FileChangeMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] change message" << std::endl;
+			std::cout << "[" << m.originatorNode << "] change " << m.targetFile << std::endl;
 			requeuePriority = processChangeFileMessage(m) ? -1 : filePriority + 1;
 		}
 		break; case Message::Type::connect:{
@@ -226,8 +226,8 @@ private:
 			// File messages have priority 5
 			messageQueue->emplace(filePriority, std::move(m));
 		}
-		break; case Message::Type::create:{
-			auto m = std::make_unique<FileChangeMessage>();
+		break; case Message::Type::contentChange:{
+			auto m = std::make_unique<FileContentMessage>();
 			ar >> *m;
 
 			// Validate message hash
@@ -287,7 +287,7 @@ private:
 	bool processLockMessage(const FileMessage& m);
 	bool processUnlockMessage(const FileMessage& m);
 	bool processDeleteFileMessage(const FileMessage& m);
-	bool processCreateFileMessage(const FileContentMessage& m);
+	bool processContentFileMessage(const FileContentMessage& m);
 	bool processInitialFileSyncMessage(const FileInitialSyncMessage& m);
 	bool processInitialFileSyncRequestMessage(const Message& m);
 	bool processChangeFileMessage(const FileChangeMessage& m);

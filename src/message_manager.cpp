@@ -29,7 +29,7 @@ bool MessageManager::validateMessageHash(const Message& m, uint8_t offset /*= 0*
 		std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
 		ResendRequestMessage resend;
 		resend.type = Message::Type::resendRequest;
-		resend.requestedHash = m.change;
+		resend.requestedHash = m.messageHash;
 		// Request that the message be resent by its sender
 		PeerManager::singleton().send(resend, m.senderNode);
 		return false;
@@ -52,7 +52,7 @@ bool MessageManager::processResendRequestMessage(const ResendRequestMessage& req
 			break; case Message::Type::lock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);
 			break; case Message::Type::unlock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);
 			break; case Message::Type::deleteFile:			PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);
-			break; case Message::Type::create:				PeerManager::singleton().send(reference_cast<FileContentMessage>(*m), request.originatorNode);
+			break; case Message::Type::contentChange:				PeerManager::singleton().send(reference_cast<FileContentMessage>(*m), request.originatorNode);
 			break; case Message::Type::initialSync:			PeerManager::singleton().send(reference_cast<FileInitialSyncMessage>(*m), request.originatorNode);
 			break; case Message::Type::initialSyncRequest:	PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);
 			break; case Message::Type::change:				PeerManager::singleton().send(reference_cast<FileChangeMessage>(*m), request.originatorNode);
@@ -245,8 +245,8 @@ bool MessageManager::processDeleteFileMessage(const FileMessage& m){
 	return true;
 }
 
-// Function that processes a file create
-bool MessageManager::processCreateFileMessage(const FileContentMessage& m){
+// Function that processes a new file content message
+bool MessageManager::processContentFileMessage(const FileContentMessage& m){
 	// If we are still connecting to the network, process this message later
 	if(!isFinishedConnecting())
 		return false;

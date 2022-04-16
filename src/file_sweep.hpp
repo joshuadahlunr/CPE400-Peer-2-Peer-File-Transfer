@@ -87,12 +87,18 @@ struct FilesystemSweeper {
 				if(timestamps->find(path) == timestamps->end()){
 					// File has been created!
 					onFileCreated(path);
+					// Update its last write time to now
+					touch(path);
+					pair.first = last_write_time(path);
 
 					fastTrackTimestamps[path] = pair; // Mark the file as being fast tracked
 				// If our stored timestamp for this file is older than its most recent timestamp it has been modified
 				} else if((*timestamps)[path].first < timestamp){
 					// File has been modified!
 					onFileModified(path);
+					// Update its last write time to now
+					touch(path);
+					pair.first = last_write_time(path);
 
 					// If the file wasn't already in the fast tracked list, it has been added!
 					if(fastTrackTimestamps.find(path) == fastTrackTimestamps.end())
@@ -145,6 +151,11 @@ struct FilesystemSweeper {
 			fastTrackTimestamps.erase(path);
 
 		iteration++;
+	}
+
+	// Function that updates the last write time of the path to be right now
+	void touch(const std::filesystem::path& p){
+		last_write_time(p, std::filesystem::file_time_type::clock::now());
 	}
 };
 
