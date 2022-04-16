@@ -28,7 +28,7 @@ void onFileCreated(const std::filesystem::path& path) {
 
 	// Read the entire content of the file
 	std::ifstream fin(path);
-	std::getline(fin, m.fileContent, '\0'); 
+	std::getline(fin, m.fileContent, '\0');
 	fin.close();
 
 	PeerManager::singleton().send(m); // Broadcast the message
@@ -54,7 +54,7 @@ void onFileDeleted(const std::filesystem::path& path) {
 // Callback called whenever a file is fast-tracked
 void onFileFastTracked(const std::filesystem::path& path) {
 	std::cout << path << " fast tracked!" << std::endl;
-	
+
 	// Propigate a lock through the network
 	FileMessage m;
 	m.type = Message::Type::lock;
@@ -112,8 +112,7 @@ int main(int argc, char** argv) {
 			auto _ = COMMAND_LINE_ARGS.parse(2, (char**) dummy.data());
 		} else
 			path = relative(path);
-
-
+	
 	{
 		std::string a = "Hello Bob!", b = "Hello Barb!";
 		auto diff = extractDiff(a, b);
@@ -124,7 +123,7 @@ int main(int argc, char** argv) {
 
 
 	// Setup the networking components in a thread (it takes a while so we also tidy up the filesystem at the same time)
-	std::thread networkSetupThread([&folders, port]{
+	std::thread networkSetupThread([&folders, port] {
 		// Link the message manager's folders
 		MessageManager::singleton().setup(folders);
 
@@ -151,7 +150,7 @@ int main(int argc, char** argv) {
 	if(remoteIP.isValid()) {
 		peers->emplace_back(std::move(Peer::connect(remoteIP, port)));
 		PeerManager::singleton().setGatewayIP(remoteIP); // Mark the remote IP as our "gateway" to the rest of the network
-	
+
 	// If we are starting a network, tell the message manager that we are completely connected
 	} else
 		MessageManager::singleton().totalInitialFiles = 0;

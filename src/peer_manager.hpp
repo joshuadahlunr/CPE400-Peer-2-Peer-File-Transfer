@@ -34,7 +34,7 @@ public:
 
 	// Function which starts the listening thread and sets its properties
 	void setup(zt::IpAddress ip, uint16_t port, uint8_t incomingConnectionCount = 5) {
-		listeningThread = std::jthread([this, ip, port, incomingConnectionCount](std::stop_token stop){
+		listeningThread = std::jthread([this, ip, port, incomingConnectionCount](std::stop_token stop) {
 			// Create the connection socket and start listening for peers
 			zt::Socket connectionSocket;
 			ZTCPP_THROW_ON_ERROR(connectionSocket.init(zt::SocketDomain::InternetProtocol_IPv6, zt::SocketType::Stream), ZTError);
@@ -43,7 +43,7 @@ public:
 			std::cout << "Waiting for connections..." << std::endl;
 
 			// Look for a connection until the thread is requested to stop
-			while(!stop.stop_requested()){
+			while(!stop.stop_requested()) {
 				// Wait upto 100ms for a connection
 				auto pollres = connectionSocket.pollEvents(zt::PollEventBitmask::ReadyToReceiveAny, 100ms);
 				ZTCPP_THROW_ON_ERROR(pollres, ZTError);
@@ -128,7 +128,7 @@ private:
 		auto lock = peers.read_lock();
 
 		// Lambda that sends the data to every connected node (including ourselves) except the node that data just came from
-		auto forward2all = [&](){
+		auto forward2all = [&]() {
 			// Send the data to every peer (except the source)
 			for(auto& peer: *lock)
 				if(peer.getRemoteIP() != source)

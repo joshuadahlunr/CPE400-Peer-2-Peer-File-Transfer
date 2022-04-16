@@ -21,8 +21,7 @@
 namespace boost::serialization {
 
 	template<class Archive>
-	void save(Archive& ar, const zt::IpAddress& ip, const unsigned int version)
-	{
+	void save(Archive& ar, const zt::IpAddress& ip, const unsigned int version) {
 		auto family = ip.getAddressFamily();
 		ar& (uint8_t) family;
 
@@ -33,8 +32,7 @@ namespace boost::serialization {
 	}
 
 	template<class Archive>
-	void load(Archive& ar, zt::IpAddress& ip, const unsigned int version)
-	{
+	void load(Archive& ar, zt::IpAddress& ip, const unsigned int version) {
 		uint8_t _family;
 		ar & _family;
 		zt::AddressFamily family = (zt::AddressFamily) _family;
@@ -54,8 +52,7 @@ namespace boost::serialization {
 BOOST_SERIALIZATION_SPLIT_FREE(zt::IpAddress)
 
 
-struct Message
-{
+struct Message {
 	friend class boost::serialization::access;
 	// Action flag must be enumerator.
 	enum Type : uint8_t {invalid = 0, lock, unlock, deleteFile, contentChange, initialSync, initialSyncRequest, change, connect, disconnect, payload, resendRequest, linkLost} type;
@@ -70,8 +67,7 @@ struct Message
 	size_t messageHash;
 
 	template <typename Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
+	void serialize(Archive& ar, const unsigned int version) {
 		ar& reference_cast<uint8_t>(type);
 		ar& receiverNode;
 		ar& originatorNode;
@@ -102,8 +98,7 @@ struct PayloadMessage : Message {
 	std::string payload;
 
 	template <typename Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
+	void serialize(Archive& ar, const unsigned int version) {
 		ar& boost::serialization::base_object<Message>(*this);
 		ar& payload;
 	}
@@ -118,8 +113,7 @@ struct ResendRequestMessage : Message {
 	size_t requestedHash;
 
 	template <typename Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
+	void serialize(Archive& ar, const unsigned int version) {
 		ar& boost::serialization::base_object<Message>(*this);
 		ar& requestedHash;
 	}
@@ -128,8 +122,7 @@ protected:
 	std::string hashString() const override { return Message::hashString() + std::to_string(requestedHash); }
 };
 
-struct FileMessage : Message
-{
+struct FileMessage : Message {
    	friend class boost::serialization::access;
 	// To target specific file in path.
 	std::filesystem::path targetFile;
@@ -137,8 +130,7 @@ struct FileMessage : Message
 	std::chrono::system_clock::time_point timestamp;
 
 	template<class Archive>
-    void save(Archive & ar, const unsigned int version) const
-    {
+    void save(Archive & ar, const unsigned int version) const {
 		ar& boost::serialization::base_object<Message>(*this);
 		// Save target file as a string
         ar& targetFile.string();
@@ -146,8 +138,7 @@ struct FileMessage : Message
 		ar& std::chrono::system_clock::to_time_t(timestamp);
     }
     template<class Archive>
-    void load(Archive & ar, const unsigned int version)
-    {
+    void load(Archive & ar, const unsigned int version) {
 		ar& boost::serialization::base_object<Message>(*this);
 
 		// Load target file as a string and then convert it
@@ -171,14 +162,12 @@ protected:
 	}
 };
 
-struct FileContentMessage : FileMessage
-{
+struct FileContentMessage : FileMessage {
 	//File content created.
 	std::string fileContent;
 
 	template <typename Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
+	void serialize(Archive& ar, const unsigned int version) {
 		ar& boost::serialization::base_object<FileMessage>(*this);
 		ar& fileContent;
 	}
@@ -194,8 +183,7 @@ struct FileInitialSyncMessage: FileContentMessage {
 		index;
 
 	template <typename Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
+	void serialize(Archive& ar, const unsigned int version) {
 		ar& boost::serialization::base_object<FileContentMessage>(*this);
 		ar& total;
 		ar& index;
@@ -205,15 +193,13 @@ protected:
 	std::string hashString() const override { return FileContentMessage::hashString() + std::to_string(total) + std::to_string(index); }
 };
 
-struct FileChangeMessage : FileMessage
-{
+struct FileChangeMessage : FileMessage {
 	//File content changed.
 	std::string fChange;
 
 
 	template <typename Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
+	void serialize(Archive& ar, const unsigned int version) {
 		ar& boost::serialization::base_object<FileMessage>(*this);
 		ar& fChange;
 	}
@@ -230,8 +216,7 @@ struct ConnectMessage : Message {
 	std::vector<std::filesystem::path> managedPaths;
 
 	template <typename Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
+	void serialize(Archive& ar, const unsigned int version) {
 		ar& boost::serialization::base_object<Message>(*this);
 		ar& backupPeers;
 	}

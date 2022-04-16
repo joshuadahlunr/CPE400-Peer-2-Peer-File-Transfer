@@ -13,7 +13,7 @@ class ZeroTierNode: public zt::EventHandlerInterface {
 	zt::IpAddress ip = zt::IpAddress::ipv4Unspecified();
 
 public:
-	// Function which gets the ZeroTierNode singleton	
+	// Function which gets the ZeroTierNode singleton
 	static ZeroTierNode& singleton() {
 		static ZeroTierNode instance;
 		return instance;
@@ -40,7 +40,7 @@ public:
 		std::cout << "Waiting to join network..." << std::endl;
 		while (networksJoinedCount <= 0)
 			std::this_thread::sleep_for(1s);
-		
+
 		std::cout << "ZeroTier service started!" << std::endl;
 	}
 
@@ -76,11 +76,11 @@ public:
 	void onNetworkEvent(zt::EventCode::Network code, const zt::NetworkDetails* details) noexcept override {
 		std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
 
-		if (code == zt::EventCode::Network::ReadyIPv4 || 
+		if (code == zt::EventCode::Network::ReadyIPv4 ||
 				code == zt::EventCode::Network::ReadyIPv6 ||
 				code == zt::EventCode::Network::ReadyIPv4_IPv6) {
 			networksJoinedCount += 1;
-		} else if (code == zt::EventCode::Network::Down) 
+		} else if (code == zt::EventCode::Network::Down)
 			networksJoinedCount -= 1;
 	}
 

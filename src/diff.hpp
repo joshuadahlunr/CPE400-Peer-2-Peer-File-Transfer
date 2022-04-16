@@ -6,15 +6,15 @@
 #include "include_everywhere.hpp"
 
 namespace dtl {
-	dtl_typedefs(char, std::string) 
-	
+	dtl_typedefs(char, std::string)
+
 	inline static std::string uniPatch (dtl::uniHunkVec uniHunks, const std::string& seq) {
 		static auto joinSesVec = [](sesElemVec& s1, const sesElemVec& s2) {
 			if (!s2.empty()) {
 				for (auto vit=s2.begin();vit!=s2.end();++vit) {
 					s1.push_back(*vit);
 				}
-			}      
+			}
 		};
 
 		dtl::elemList        seqLst(seq.begin(), seq.end());
@@ -57,7 +57,7 @@ namespace dtl {
 			}
 			shunk.clear();
 		}
-		
+
 		std::string patchedSeq(seqLst.begin(), seqLst.end());
 		return patchedSeq;
 	}

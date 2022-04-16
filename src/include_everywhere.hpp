@@ -34,7 +34,7 @@ time_t to_time_t(TP tp) {
 
 
 // Function which calculates the same path but in the .wnts folder
-inline std::filesystem::path wntsPath(const std::filesystem::path& path){
+inline std::filesystem::path wntsPath(const std::filesystem::path& path) {
 	auto i = path.begin();
 	std::filesystem::path wntsPath = *i++;
 	wntsPath /= ".wnts";
@@ -52,7 +52,7 @@ static void enumerateAllFiles(const std::vector<std::filesystem::path>& folders,
 				// Ignore any paths containing .wnts in their folder tree
 				bool good = true;
 				for(auto folder: i->path())
-					if(folder.string() == ".wnts"){
+					if(folder.string() == ".wnts") {
 						good = false;
 						break;
 					}

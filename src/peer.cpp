@@ -2,14 +2,14 @@
 #include "peer_manager.hpp"
 
 // Function run by the Peer's thread
-void Peer::threadFunction(std::stop_token stop){
+void Peer::threadFunction(std::stop_token stop) {
 	// Variable tracking how much data we should expect to receive in this message
 	uint64_t dataSize = 0;
 	// Variable tracking how much data we have currently received
 	uint64_t dataReceived = 0;
 
 	// Loop unil the thread is requested to stop
-	while(!stop.stop_requested()){
+	while(!stop.stop_requested()) {
 		try {
 			// std::cout << "threadfn:" << socket._impl.get() << std::endl;
 
@@ -23,14 +23,14 @@ void Peer::threadFunction(std::stop_token stop){
 				std::byte* bufferMem = &buffer[0];
 
 				// If we haven't determined how much data we have to receive...
-				if(dataSize == 0){
+				if(dataSize == 0) {
 					// Read a uint64 worth of data (remember it may take multiple loop iterations to receive that data)
 					auto res = socket.receive(bufferMem + dataReceived, sizeof(dataSize) - dataReceived);
 					ZTCPP_THROW_ON_ERROR(res, ZTError);
 					dataReceived += *res;
 
 					// Once we have read the uint64...
-					if(dataReceived >= sizeof(dataSize)){
+					if(dataReceived >= sizeof(dataSize)) {
 						// Mark it is as our data size
 						dataSize = *((uint64_t*) bufferMem);
 						dataReceived -= sizeof(dataSize); // Subtracting to account for the possibility of extra data

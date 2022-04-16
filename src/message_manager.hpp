@@ -57,7 +57,7 @@ struct MessageManager {
 	}
 
 	// Function which gets a reference to the managed folders, and sets up the circular buffer to free released pointers
-	void setup(std::vector<std::filesystem::path>& folders){
+	void setup(std::vector<std::filesystem::path>& folders) {
 		this->folders = &folders;
 		oldMessages.setFinalizer([](std::unique_ptr<Message>& m){ m.release(); });
 	}
@@ -65,9 +65,9 @@ struct MessageManager {
 
 	// Function that processes the next message currently in the message queue
 	//	(or waits 1/10 of a second if there is nothing in the queue)
-	void processNextMessage(){
+	void processNextMessage() {
 		// If the queue is empty, sleep for 100ms
-		if(messageQueue->empty()){
+		if(messageQueue->empty()) {
 			std::this_thread::sleep_for(100ms);
 			return;
 		}
@@ -80,62 +80,62 @@ struct MessageManager {
 		// Process the message as the same type of message that was delivered
 		int64_t requeuePriority; // -1 indicates no requeue needed
 		switch(msgPtr->type) {
-		break; case Message::Type::payload:{
+		break; case Message::Type::payload: {
 			auto& m = reference_cast<PayloadMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "][payload]:\n" << m.payload << std::endl;
 			requeuePriority = -1;
 		}
-		break; case Message::Type::resendRequest:{
+		break; case Message::Type::resendRequest: {
 			auto& m = reference_cast<ResendRequestMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] resend request message" <<  std::endl;
 			requeuePriority = processResendRequestMessage(m) ? -1 : resendPriority + 1;
 		}
-		break; case Message::Type::lock:{
+		break; case Message::Type::lock: {
 			auto& m = reference_cast<FileMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] lock " << m.targetFile << std::endl;
 			requeuePriority = processLockMessage(m) ? -1 : lockPriority + 1;
 		}
-		break; case Message::Type::unlock:{
+		break; case Message::Type::unlock: {
 			auto& m = reference_cast<FileMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] unlock " << m.targetFile << std::endl;
 			requeuePriority = processUnlockMessage(m) ? -1 : lockPriority + 1;
 		}
-		break; case Message::Type::deleteFile:{
+		break; case Message::Type::deleteFile: {
 			auto& m = reference_cast<FileMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] delete " << m.targetFile << std::endl;
 			requeuePriority = processDeleteFileMessage(m) ? -1 : filePriority + 1;
 		}
-		break; case Message::Type::contentChange:{
+		break; case Message::Type::contentChange: {
 			auto& m = reference_cast<FileContentMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] create " << m.targetFile << std::endl;
 			requeuePriority = processContentFileMessage(m) ? -1 : filePriority + 1;
 		}
-		break; case Message::Type::initialSync:{
+		break; case Message::Type::initialSync: {
 			auto& m = reference_cast<FileInitialSyncMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] sync " << m.targetFile << std::endl;
 			requeuePriority = processInitialFileSyncMessage(m) ? -1 : lockPriority + 1;
 		}
-		break; case Message::Type::initialSyncRequest:{
+		break; case Message::Type::initialSyncRequest: {
 			auto& m = reference_cast<Message>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] sync request message" << std::endl;
 			requeuePriority = processInitialFileSyncRequestMessage(m) ? -1 : lockPriority + 1;
 		}
-		break; case Message::Type::change:{
+		break; case Message::Type::change: {
 			auto& m = reference_cast<FileChangeMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] change " << m.targetFile << std::endl;
 			requeuePriority = processChangeFileMessage(m) ? -1 : filePriority + 1;
 		}
-		break; case Message::Type::connect:{
+		break; case Message::Type::connect: {
 			auto& m = reference_cast<ConnectMessage>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] connect message" << std::endl;
 			requeuePriority = processConnectMessage(m) ? -1 : connectPriority + 1;
 		}
-		break; case Message::Type::disconnect:{
+		break; case Message::Type::disconnect: {
 			auto& m = reference_cast<Message>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] disconnect message" << std::endl;
 			requeuePriority = processDisconnectMessage(m) ? -1 : disconnectPriority + 1;
 		}
-		break; case Message::Type::linkLost:{
+		break; case Message::Type::linkLost: {
 			auto& m = reference_cast<Message>(*msgPtr);
 			std::cout << "[" << m.originatorNode << "] link-lost message" << std::endl;
 			requeuePriority = processLinkLostMessage(m) ? -1 : resendPriority + 1;
@@ -177,7 +177,7 @@ private:
 
 		// Deserialize the message as the same type of message that was delivered and add it to the message queue
 		switch(type) {
-		break; case Message::Type::payload:{
+		break; case Message::Type::payload: {
 			auto m = std::make_unique<PayloadMessage>();
 			ar >> *m;
 
@@ -187,7 +187,7 @@ private:
 			// Payloads have a low priority
 			messageQueue->emplace(payloadPriority, std::move(m));
 		}
-		break; case Message::Type::resendRequest:{
+		break; case Message::Type::resendRequest: {
 			auto m = std::make_unique<ResendRequestMessage>();
 			ar >> *m;
 
@@ -197,7 +197,7 @@ private:
 			// Resend requests are processed before anything else
 			messageQueue->emplace(resendPriority, std::move(m));
 		}
-		break; case Message::Type::lock:{
+		break; case Message::Type::lock: {
 			auto m = std::make_unique<FileMessage>();
 			ar >> *m;
 
@@ -207,7 +207,7 @@ private:
 			// File messages have priority 5
 			messageQueue->emplace(lockPriority, std::move(m));
 		}
-		break; case Message::Type::unlock:{
+		break; case Message::Type::unlock: {
 			auto m = std::make_unique<FileMessage>();
 			ar >> *m;
 
@@ -217,7 +217,7 @@ private:
 			// File messages have priority 5
 			messageQueue->emplace(lockPriority, std::move(m));
 		}
-		break; case Message::Type::deleteFile:{
+		break; case Message::Type::deleteFile: {
 			auto m = std::make_unique<FileMessage>();
 			ar >> *m;
 
@@ -227,7 +227,7 @@ private:
 			// File messages have priority 5
 			messageQueue->emplace(filePriority, std::move(m));
 		}
-		break; case Message::Type::contentChange:{
+		break; case Message::Type::contentChange: {
 			auto m = std::make_unique<FileContentMessage>();
 			ar >> *m;
 
@@ -237,7 +237,7 @@ private:
 			// File messages have priority 5
 			messageQueue->emplace(filePriority, std::move(m));
 		}
-		break; case Message::Type::initialSync:{
+		break; case Message::Type::initialSync: {
 			auto m = std::make_unique<FileInitialSyncMessage>();
 			ar >> *m;
 
@@ -247,7 +247,7 @@ private:
 			// Syncs are executed before other file messages 4
 			messageQueue->emplace(lockPriority, std::move(m));
 		}
-		break; case Message::Type::change:{
+		break; case Message::Type::change: {
 			auto m = std::make_unique<FileChangeMessage>();
 			ar >> *m;
 
@@ -257,7 +257,7 @@ private:
 			// File messages have priority 5
 			messageQueue->emplace(filePriority, std::move(m));
 		}
-		break; case Message::Type::connect:{
+		break; case Message::Type::connect: {
 			auto m = std::make_unique<ConnectMessage>();
 			ar >> *m;
 
@@ -267,7 +267,7 @@ private:
 			// Connect has highest priority
 			messageQueue->emplace(connectPriority, std::move(m));
 		}
-		break; case Message::Type::disconnect:{
+		break; case Message::Type::disconnect: {
 			auto m = std::make_unique<Message>();
 			ar >> *m;
 

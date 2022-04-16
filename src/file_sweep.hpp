@@ -84,7 +84,7 @@ struct FilesystemSweeper {
 				auto pair = std::make_pair(timestamp, iteration);
 
 				// If we aren't tracking this file, that means it was created
-				if(timestamps->find(path) == timestamps->end()){
+				if(timestamps->find(path) == timestamps->end()) {
 					// File has been created!
 					onFileCreated(path);
 					// Update its last write time to now
@@ -93,7 +93,7 @@ struct FilesystemSweeper {
 
 					fastTrackTimestamps[path] = pair; // Mark the file as being fast tracked
 				// If our stored timestamp for this file is older than its most recent timestamp it has been modified
-				} else if((*timestamps)[path].first < timestamp){
+				} else if((*timestamps)[path].first < timestamp) {
 					// File has been modified!
 					onFileModified(path);
 					// Update its last write time to now
@@ -120,11 +120,11 @@ struct FilesystemSweeper {
 		auto now = std::filesystem::file_time_type::clock::now();
 
 		// For every tracked file...
-		for(auto& [path, pair]: *timestamps){
+		for(auto& [path, pair]: *timestamps) {
 			auto& [timestamp, sweepIteration] = pair;
 
 			// If its sweep iteration doesn't match the current sweep iteration, the file has been deleted
-			if(sweepIteration != iteration){
+			if(sweepIteration != iteration) {
 				// File has been deleted!
 				onFileDeleted(path);
 
@@ -134,7 +134,7 @@ struct FilesystemSweeper {
 				// If the file was already fast tracked, the file has been unfast-tracked!
 				if(fastTrackTimestamps.find(path) != fastTrackTimestamps.end())
 					onFileUnFastTracked(path);
-				
+
 				fastTrackRemovedFiles.emplace_back(path);
 			}
 
@@ -154,7 +154,7 @@ struct FilesystemSweeper {
 	}
 
 	// Function that updates the last write time of the path to be right now
-	void touch(const std::filesystem::path& p){
+	void touch(const std::filesystem::path& p) {
 		last_write_time(p, std::filesystem::file_time_type::clock::now());
 	}
 };

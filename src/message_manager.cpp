@@ -42,17 +42,17 @@ bool MessageManager::validateMessageHash(const Message& m, uint8_t offset /*= 0*
 
 
 // Function that processes a resend request
-bool MessageManager::processResendRequestMessage(const ResendRequestMessage& request){
+bool MessageManager::processResendRequestMessage(const ResendRequestMessage& request) {
 	// Find the message that needs to be resent in the old message cache, then resend it
 	for(auto& m: oldMessages) {
 		if(m->messageHash == request.requestedHash) {
-			switch(m->type){
+			switch(m->type) {
 			break; case Message::Type::payload:				PeerManager::singleton().send(reference_cast<PayloadMessage>(*m), request.originatorNode);
 			break; case Message::Type::resendRequest:		PeerManager::singleton().send(reference_cast<ResendRequestMessage>(*m), request.originatorNode);
 			break; case Message::Type::lock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);
 			break; case Message::Type::unlock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);
 			break; case Message::Type::deleteFile:			PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);
-			break; case Message::Type::contentChange:				PeerManager::singleton().send(reference_cast<FileContentMessage>(*m), request.originatorNode);
+			break; case Message::Type::contentChange:		PeerManager::singleton().send(reference_cast<FileContentMessage>(*m), request.originatorNode);
 			break; case Message::Type::initialSync:			PeerManager::singleton().send(reference_cast<FileInitialSyncMessage>(*m), request.originatorNode);
 			break; case Message::Type::initialSyncRequest:	PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);
 			break; case Message::Type::change:				PeerManager::singleton().send(reference_cast<FileChangeMessage>(*m), request.originatorNode);
@@ -73,7 +73,7 @@ bool MessageManager::processResendRequestMessage(const ResendRequestMessage& req
 }
 
 // Function that processes a file lock
-bool MessageManager::processLockMessage(const FileMessage& m){
+bool MessageManager::processLockMessage(const FileMessage& m) {
 	// If we are still connecting to the network, process this message later
 	if(!isFinishedConnecting())
 		return false;
@@ -103,14 +103,11 @@ bool MessageManager::processLockMessage(const FileMessage& m){
 	std::cout << "Others Exec: " << ((check & std::filesystem::perms::others_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
 
 	// Check for read permissions.
-	if((check & readPerms) != std::filesystem::perms::none)
-	{
+	if((check & readPerms) != std::filesystem::perms::none) {
 		std::cout << "Owner, Others, or Group may have read permissions.\n";
 
 		// Check to see if there are write permissions which means not locked.
-		if((check & writePerms) != std::filesystem::perms::none)
-
-		{
+		if((check & writePerms) != std::filesystem::perms::none) {
 			std::cout << "Owner, Others, or Group may have have write permissions, file not locked.\n";
 
 			// Lock file by writting to file and change permissions.
@@ -129,8 +126,7 @@ bool MessageManager::processLockMessage(const FileMessage& m){
 		}
 
 		// File has read only permissions so it is locked.
-		else
-		{
+		else {
 			std::cout << "File is locked.\n";
 
 			FileMessage oldLock;
@@ -155,7 +151,7 @@ bool MessageManager::processLockMessage(const FileMessage& m){
 }
 
 // Function that processes a file unlock
-bool MessageManager::processUnlockMessage(const FileMessage& m){
+bool MessageManager::processUnlockMessage(const FileMessage& m) {
 	// If we are still connecting to the network, process this message later
 	if(!isFinishedConnecting())
 		return false;
@@ -169,11 +165,10 @@ bool MessageManager::processUnlockMessage(const FileMessage& m){
 
 	auto lockPath = lockFilePath(m.targetFile);
 	// If the lock file exists the file is locked
-	if(exists(lockPath)){
+	if(exists(lockPath)) {
 		auto [oldLock, permsToAdd] = loadLockFile(m.targetFile);
 
-		if(m.originatorNode == oldLock.originatorNode)
-		{
+		if(m.originatorNode == oldLock.originatorNode) {
 			//if path exists check to see if lock exists.
 			std::filesystem::perms check = std::filesystem::status(m.targetFile).permissions();
 			std::cout << "Owner Read: " << ((check & std::filesystem::perms::owner_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
@@ -187,15 +182,13 @@ bool MessageManager::processUnlockMessage(const FileMessage& m){
 			std::cout << "Others Exec: " << ((check & std::filesystem::perms::others_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
 
 			// Check to see if there are write permissions, if there are then file is unlocked.
-			if((check & writePerms) != std::filesystem::perms::none)
-			{
+			if((check & writePerms) != std::filesystem::perms::none) {
 				// File is unlocked
 				std::cout << "File is unlocked" << std::endl;
 
 			}
 
-			else
-			{
+			else {
 				// File is locked add permissions to unlock
 				std::filesystem::permissions(m.targetFile, permsToAdd, std::filesystem::perm_options::add);
 				std::filesystem::perms check = std::filesystem::status(m.targetFile).permissions();
@@ -222,7 +215,7 @@ bool MessageManager::processUnlockMessage(const FileMessage& m){
 }
 
 // Function that processes a file delete
-bool MessageManager::processDeleteFileMessage(const FileMessage& m){
+bool MessageManager::processDeleteFileMessage(const FileMessage& m) {
 	// If we are still connecting to the network, process this message later
 	if(!isFinishedConnecting())
 		return false;
@@ -246,7 +239,7 @@ bool MessageManager::processDeleteFileMessage(const FileMessage& m){
 }
 
 // Function that processes a new file content message
-bool MessageManager::processContentFileMessage(const FileContentMessage& m){
+bool MessageManager::processContentFileMessage(const FileContentMessage& m) {
 	// If we are still connecting to the network, process this message later
 	if(!isFinishedConnecting())
 		return false;
@@ -278,7 +271,7 @@ bool MessageManager::processContentFileMessage(const FileContentMessage& m){
 }
 
 // Function that processes an initial file sync
-bool MessageManager::processInitialFileSyncMessage(const FileInitialSyncMessage& m){
+bool MessageManager::processInitialFileSyncMessage(const FileInitialSyncMessage& m) {
 	std::cout << m.index << " / " << m.total << std::endl;
 	auto time_t = to_time_t(m.timestamp);
 
@@ -315,7 +308,7 @@ bool MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
 	// TODO: Can we parallelize this somehow?
 	// Send the content of every managed file to the newly connected node
 	auto paths = enumerateAllFiles(*folders);
-	for(size_t i = 0, size = paths.size(); i < size; i++){
+	for(size_t i = 0, size = paths.size(); i < size; i++) {
 		FileInitialSyncMessage sync;
 		sync.type = Message::Type::initialSync;
 		sync.targetFile = paths[i];
@@ -332,7 +325,7 @@ bool MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
 		PeerManager::singleton().send(sync, m.originatorNode);
 
 		// If the file is locked also send a lock message
-		if(exists(lockFilePath(sync.targetFile))){
+		if(exists(lockFilePath(sync.targetFile))) {
 			auto [lock, _] = loadLockFile(sync.targetFile);
 			PeerManager::singleton().send(lock, m.originatorNode);
 		}
@@ -343,7 +336,7 @@ bool MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
 }
 
 // Function that processes a file change
-bool MessageManager::processChangeFileMessage(const FileChangeMessage& m){
+bool MessageManager::processChangeFileMessage(const FileChangeMessage& m) {
 	// If we are still connecting to the network, process this message later
 	if(!isFinishedConnecting())
 		return false;
@@ -362,7 +355,7 @@ bool MessageManager::processChangeFileMessage(const FileChangeMessage& m){
 }
 
 // Function that processes connection info from the gateway peer
-bool MessageManager::processConnectMessage(const ConnectMessage& m){
+bool MessageManager::processConnectMessage(const ConnectMessage& m) {
 	// Save the backup IP addresses
 	PeerManager::singleton().backupPeers = std::move(m.backupPeers);
 	// Save the list of folders the network is managing
@@ -385,9 +378,8 @@ bool MessageManager::processConnectMessage(const ConnectMessage& m){
 }
 
 // Function that handles losing our link to a peer
-bool MessageManager::processLinkLostMessage(const Message& m){
-	zt::IpAddress removedIP;
-	{
+bool MessageManager::processLinkLostMessage(const Message& m) {
+	zt::IpAddress removedIP; {
 		auto peerLock = PeerManager::singleton().getPeers().write_lock();
 		// Find the Peer that disconnected
 		size_t index = -1;
@@ -396,7 +388,7 @@ bool MessageManager::processLinkLostMessage(const Message& m){
 				index = i;
 				break;
 			}
-		if(index != std::numeric_limits<size_t>::max()){
+		if(index != std::numeric_limits<size_t>::max()) {
 			// Remove the disconnected Peer from our list of Peers
 			removedIP = peerLock[index].getRemoteIP();
 			peerLock->erase(peerLock->begin() + index);
@@ -437,7 +429,7 @@ bool MessageManager::processLinkLostMessage(const Message& m){
 }
 
 // Function that handles a peer disconnect
-bool MessageManager::processDisconnectMessage(const Message& m){
+bool MessageManager::processDisconnectMessage(const Message& m) {
 	// If we are still connecting to the network, process this message later
 	if(!isFinishedConnecting())
 		return false;
