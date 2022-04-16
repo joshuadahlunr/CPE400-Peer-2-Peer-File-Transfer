@@ -6,6 +6,7 @@
 #include <csignal>
 #include <Argos/Argos.hpp>
 #include <boost/algorithm/string.hpp>
+#include <fstream>
 
 
 // Callback that shuts down the program when interrupted (ctrl + c in terminal)
@@ -18,6 +19,19 @@ void signalCallbackHandler(int signum) {
 // Callback called whenever a file is created
 void onFileCreated(const std::filesystem::path& path) {
 	std::cout << path << " created!" << std::endl;
+
+	// Propigate the file's creation
+	FileContentMessage m;
+	m.type = Message::Type::contentChange;
+	m.targetFile = path;
+	m.timestamp = convertTimepoint<std::chrono::system_clock::time_point>(last_write_time(path));
+
+	// Read the entire content of the file
+	std::ifstream fin(path);
+	std::getline(fin, m.fileContent, '\0'); 
+	fin.close();
+
+	PeerManager::singleton().send(m); // Broadcast the message
 }
 
 // Callback called whenever a file is modified
@@ -122,7 +136,7 @@ int main(int argc, char** argv) {
 	});
 
 	// Create a filesystem sweeper that scan the folders from command line, and repoerts its results to the onFile* functions in this file
-	FilesystemSweeper sweeper{folders, onFileCreated, onFileModified, onFileDeleted, onFileFastTracked, onFileUnFastTracked};
+	FilesystemSweeper sweeper{folders, onFileCreated, onFileCreated, onFileDeleted, onFileFastTracked, onFileUnFastTracked};
 	sweeper.setup();
 
 	// Wait for the node setup to finish

@@ -166,8 +166,9 @@ private:
 	// Function that deserializes a message received from the network and adds it to the message queue
 	void deserializeMessage(const std::span<std::byte> data) const {
 		// Extract the type of message
-		Message::Type type = (Message::Type) uint8_t(data[10]);
-		if((uint8_t)type == 0) type = (Message::Type) uint8_t(data[5]);
+		Message::Type type = (Message::Type) uint8_t(data[5]);
+		if((uint8_t)type == 0) type = (Message::Type) uint8_t(data[10]);
+		if((uint8_t)type == 0) type = (Message::Type) uint8_t(data[15]);
 		if((uint8_t)type == 0) type = (Message::Type) uint8_t(data[20]);
 		// Copy the data into a deserialization buffer
 		std::stringstream backing({(char*) data.data(), data.size()});

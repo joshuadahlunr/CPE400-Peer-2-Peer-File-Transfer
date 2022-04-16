@@ -251,6 +251,27 @@ bool MessageManager::processContentFileMessage(const FileContentMessage& m){
 	if(!isFinishedConnecting())
 		return false;
 
+	// Make sure the file isn't locked
+	if(exists(lockFilePath(m.targetFile))) {
+		auto [lock, _] = loadLockFile(m.targetFile);
+
+		// The file can't be deleted because a lock already exists
+		if(lock.originatorNode != ZeroTierNode::singleton().getIP())
+			return true;
+	}
+
+	// Save the file's content (creating any nessicary intermediate directories)
+	auto folder = m.targetFile;
+	create_directories(folder.remove_filename());
+	std::ofstream fout(m.targetFile);
+	fout << m.fileContent;
+	fout.close();
+
+	// Copy the file into the .wnts folder (if it exists)
+	auto wnts = wntsPath(m.targetFile);
+	auto wntsFolder = wnts;
+	create_directories(wntsFolder.remove_filename());
+	copy(m.targetFile, wnts, std::filesystem::copy_options::update_existing);
 
 	// Message was successfully processed, no need to add back to queue
 	return true;
@@ -326,6 +347,15 @@ bool MessageManager::processChangeFileMessage(const FileChangeMessage& m){
 	// If we are still connecting to the network, process this message later
 	if(!isFinishedConnecting())
 		return false;
+
+	// Make sure the file isn't locked
+	if(exists(lockFilePath(m.targetFile))) {
+		auto [lock, _] = loadLockFile(m.targetFile);
+
+		// The file can't be deleted because a lock already exists
+		if(lock.originatorNode != ZeroTierNode::singleton().getIP())
+			return true;
+	}
 
 	// Message was successfully processed, no need to add back to queue
 	return true;
