@@ -24,7 +24,6 @@ auto loadLockFile(const std::filesystem::path& p) {
 
 // Validate the provided message, returns true if the hashes match, requests a resend and returns false otherwise
 bool MessageManager::validateMessageHash(const Message& m, uint8_t offset /*= 0*/) const {
-	std::cout << m.messageHash << " - " << m.hash() + offset << std::endl;
 	if(m.messageHash != m.hash() + offset) {
 		std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
 		ResendRequestMessage resend;
@@ -72,63 +71,44 @@ bool MessageManager::processResendRequestMessage(const ResendRequestMessage& req
 	return true;
 }
 
+// Constants for masking relevant permissions
+constexpr auto writePerms = std::filesystem::perms::owner_write | std::filesystem::perms::group_write | std::filesystem::perms::others_write;
+constexpr auto readPerms = std::filesystem::perms::owner_read | std::filesystem::perms::group_read | std::filesystem::perms::others_read;
+
 // Function that processes a file lock
 bool MessageManager::processLockMessage(const FileMessage& m) {
 	// If we are still connecting to the network, process this message later
 	if(!isFinishedConnecting())
 		return false;
 
-	if(!exists(m.targetFile)) {
-		std::cout << "No Path\n";
+	// If the target file doesn't exist we can't lock it
+	if(!exists(m.targetFile))
 		return true;
-	}
 
-	constexpr auto writePerms = std::filesystem::perms::owner_write | std::filesystem::perms::group_write | std::filesystem::perms::others_write;
-	constexpr auto readPerms = std::filesystem::perms::owner_read | std::filesystem::perms::group_read | std::filesystem::perms::others_read;
 
 	// Determine where the lock file is located
 	auto lockPath = lockFilePath(m.targetFile);
-	std::cout << "File status." << m.targetFile << std::endl;
-
-	// Path exists so check to see if lock exists.
-	std::filesystem::perms check = std::filesystem::status(m.targetFile).permissions();
-	std::cout << "Owner Read: " << ((check & std::filesystem::perms::owner_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
-	std::cout << "Group Read: " << ((check & std::filesystem::perms::group_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
-	std::cout << "Others Read: " << ((check & std::filesystem::perms::others_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
-	std::cout << "Owner Write: " << ((check & std::filesystem::perms::owner_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
-	std::cout << "Group Write: " << ((check & std::filesystem::perms::group_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
-	std::cout << "Others Write: " << ((check & std::filesystem::perms::others_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
-	std::cout << "Owner Exec: " << ((check & std::filesystem::perms::owner_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
-	std::cout << "Group Exec: " << ((check & std::filesystem::perms::group_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
-	std::cout << "Others Exec: " << ((check & std::filesystem::perms::others_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
 
 	// Check for read permissions.
+	std::filesystem::perms check = std::filesystem::status(m.targetFile).permissions();
 	if((check & readPerms) != std::filesystem::perms::none) {
-		std::cout << "Owner, Others, or Group may have read permissions.\n";
-
 		// Check to see if there are write permissions which means not locked.
 		if((check & writePerms) != std::filesystem::perms::none) {
-			std::cout << "Owner, Others, or Group may have have write permissions, file not locked.\n";
-
 			// Lock file by writting to file and change permissions.
 			std::filesystem::permissions(m.targetFile, writePerms, std::filesystem::perm_options::remove);
 
 			// Open lock file
 			std::fstream fout(lockPath, std::ios::out | std::ios::binary);
 			boost::archive::binary_oarchive ar(fout, archiveFlags);
-			// Save message in file
+			// Save message in file and save old permissions
 			ar << m;
-			// Save old permissions
 			ar << (check & writePerms);
 
 			fout.close();
-			std::cout << "File has been written to, file is now locked!!!\n";
 		}
 
 		// File has read only permissions so it is locked.
 		else {
-			std::cout << "File is locked.\n";
-
 			FileMessage oldLock;
 			std::tie(oldLock, check) = loadLockFile(m.targetFile);
 
@@ -136,9 +116,8 @@ bool MessageManager::processLockMessage(const FileMessage& m) {
 				// Open lock file
 				std::fstream fout(lockPath, std::ios::out | std::ios::binary);
 				boost::archive::binary_oarchive ar(fout, archiveFlags);
-				// Save message in file
+				// Save message in file and save old permissions
 				ar << m;
-				// Save old permissions
 				ar << (check & writePerms);
 
 				fout.close();
@@ -156,56 +135,22 @@ bool MessageManager::processUnlockMessage(const FileMessage& m) {
 	if(!isFinishedConnecting())
 		return false;
 
-	std::cout << "In unlock.\n";
-
-	std::cout << "File status." << m.targetFile << std::endl;
-
-	constexpr auto writePerms = std::filesystem::perms::owner_write | std::filesystem::perms::group_write | std::filesystem::perms::others_write;
-	constexpr auto readPerms = std::filesystem::perms::owner_read | std::filesystem::perms::group_read | std::filesystem::perms::others_read;
-
-	auto lockPath = lockFilePath(m.targetFile);
 	// If the lock file exists the file is locked
+	auto lockPath = lockFilePath(m.targetFile);
 	if(exists(lockPath)) {
 		auto [oldLock, permsToAdd] = loadLockFile(m.targetFile);
 
 		if(m.originatorNode == oldLock.originatorNode) {
 			//if path exists check to see if lock exists.
 			std::filesystem::perms check = std::filesystem::status(m.targetFile).permissions();
-			std::cout << "Owner Read: " << ((check & std::filesystem::perms::owner_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
-			std::cout << "Group Read: " << ((check & std::filesystem::perms::group_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
-			std::cout << "Others Read: " << ((check & std::filesystem::perms::others_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
-			std::cout << "Owner Write: " << ((check & std::filesystem::perms::owner_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
-			std::cout << "Group Write: " << ((check & std::filesystem::perms::group_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
-			std::cout << "Others Write: " << ((check & std::filesystem::perms::others_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
-			std::cout << "Owner Exec: " << ((check & std::filesystem::perms::owner_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
-			std::cout << "Group Exec: " << ((check & std::filesystem::perms::group_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
-			std::cout << "Others Exec: " << ((check & std::filesystem::perms::others_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
-
+			
 			// Check to see if there are write permissions, if there are then file is unlocked.
-			if((check & writePerms) != std::filesystem::perms::none) {
-				// File is unlocked
-				std::cout << "File is unlocked" << std::endl;
-
-			}
-
-			else {
+			if((check & writePerms) == std::filesystem::perms::none) {
 				// File is locked add permissions to unlock
 				std::filesystem::permissions(m.targetFile, permsToAdd, std::filesystem::perm_options::add);
-				std::filesystem::perms check = std::filesystem::status(m.targetFile).permissions();
-				std::cout << "File is now unlocked.\n";
-				std::cout << "Owner Read: " << ((check & std::filesystem::perms::owner_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
-				std::cout << "Group Read: " << ((check & std::filesystem::perms::group_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
-				std::cout << "Others Read: " << ((check & std::filesystem::perms::others_read) != std::filesystem::perms::none ? "r" : "-") << std::endl;
-				std::cout << "Owner Write: " << ((check & std::filesystem::perms::owner_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
-				std::cout << "Group Write: " << ((check & std::filesystem::perms::group_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
-				std::cout << "Others Write: " << ((check & std::filesystem::perms::others_write) != std::filesystem::perms::none ? "w" : "-") << std::endl;
-				std::cout << "Owner Exec: " << ((check & std::filesystem::perms::owner_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
-				std::cout << "Group Exec: " << ((check & std::filesystem::perms::group_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
-				std::cout << "Others Exec: " << ((check & std::filesystem::perms::others_exec) != std::filesystem::perms::none ? "x" : "-") << std::endl;
 
-				// Erase previous lock file.
+				// Erase lock file.
 				remove(lockPath);
-
 			}
 		}
 	}
@@ -272,9 +217,6 @@ bool MessageManager::processContentFileMessage(const FileContentMessage& m) {
 
 // Function that processes an initial file sync
 bool MessageManager::processInitialFileSyncMessage(const FileInitialSyncMessage& m) {
-	std::cout << m.index << " / " << m.total << std::endl;
-	auto time_t = to_time_t(m.timestamp);
-
 	// Update metrics regarding the number of files we have recieved
 	totalInitialFiles = m.total;
 	recievedInitialFiles++;
@@ -293,8 +235,6 @@ bool MessageManager::processInitialFileSyncMessage(const FileInitialSyncMessage&
 	create_directories(wntsFolder.remove_filename());
 	copy(m.targetFile, wnts, std::filesystem::copy_options::update_existing);
 
-	std::cout << m.targetFile << " - " << std::ctime(&time_t) << std::endl;
-
 	// Message was successfully processed, no need to add back to queue
 	return true;
 }
@@ -305,7 +245,6 @@ bool MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
 	if(!isFinishedConnecting())
 		return false;
 
-	// TODO: Can we parallelize this somehow?
 	// Send the content of every managed file to the newly connected node
 	auto paths = enumerateAllFiles(*folders);
 	for(size_t i = 0, size = paths.size(); i < size; i++) {
@@ -315,8 +254,6 @@ bool MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
 		sync.timestamp = std::chrono::system_clock::now();
 		sync.index = i;
 		sync.total = size;
-
-		std::cout << sync.index << " / " << sync.total << std::endl;
 
 		std::ifstream fin(sync.targetFile);
 		std::getline(fin, sync.fileContent, '\0');

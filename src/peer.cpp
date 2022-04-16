@@ -11,8 +11,6 @@ void Peer::threadFunction(std::stop_token stop) {
 	// Loop unil the thread is requested to stop
 	while(!stop.stop_requested()) {
 		try {
-			// std::cout << "threadfn:" << socket._impl.get() << std::endl;
-
 			// Wait upto 100ms for data
 			auto pollres = socket.pollEvents(zt::PollEventBitmask::ReadyToReceiveAny, 100ms);
 			ZTCPP_THROW_ON_ERROR(pollres, ZTError);
@@ -36,8 +34,8 @@ void Peer::threadFunction(std::stop_token stop) {
 						dataReceived -= sizeof(dataSize); // Subtracting to account for the possibility of extra data
 
 						// If there is extra data in the buffer, move it to the front and resize the buffer to match our data
-						if(dataReceived > 0) memmove(bufferMem, bufferMem + sizeof(dataSize), buffer.size() - sizeof(dataSize)); // TODO: Needed?
-						buffer.resize(dataSize); // TODO: should this only be allowed to grow the buffer?
+						if(dataReceived > 0) memmove(bufferMem, bufferMem + sizeof(dataSize), buffer.size() - sizeof(dataSize));
+						buffer.resize(dataSize);
 					}
 				// If we have determined how much data we have to receive...
 				} else {
@@ -52,7 +50,7 @@ void Peer::threadFunction(std::stop_token stop) {
 						processMessage({buffer.data(), dataSize});
 
 						// If there is extra data in the buffer, move it to the front
-						if(dataReceived > 0) memmove(bufferMem, bufferMem + dataSize, buffer.size() - dataSize); // TODO: Needed?
+						if(dataReceived > 0) memmove(bufferMem, bufferMem + dataSize, buffer.size() - dataSize);
 
 						// Reset our data size back to 0 (we need to get the size of the next message from the network)
 						dataReceived -= dataSize; // Subtracting to account for the possibility of extra data
@@ -73,10 +71,10 @@ void Peer::threadFunction(std::stop_token stop) {
 				MessageManager::singleton().messageQueue->emplace(MessageManager::disconnectPriority, std::move(m)); // Same priority as disconnect messages
 
 				return;
-			}
 
-			// TODO: This is where we would need to handle a loss of connection
-			std::cerr << "[ZT][Error] " << error << std::endl;
+			// If the connection wasn't lost, display the error
+			} else 
+				std::cerr << "[ZT][Error] " << error << std::endl;
 		}
 	}
 }
@@ -84,8 +82,6 @@ void Peer::threadFunction(std::stop_token stop) {
 
 // Function that processes a message
 void Peer::processMessage(std::span<std::byte> data) {
-	// std::cout << "Received " << data.size() << " bytes:\n" << (char*) data.data() << std::endl;
-
 	// Deserialize the root message "header" containing routing data
 	std::stringstream backing({(char*) data.data(), sizeof(Message)});
 	boost::archive::binary_iarchive ar(backing, boost::archive::no_header);

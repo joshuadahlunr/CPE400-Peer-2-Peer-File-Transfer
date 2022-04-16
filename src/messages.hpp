@@ -52,6 +52,7 @@ namespace boost::serialization {
 BOOST_SERIALIZATION_SPLIT_FREE(zt::IpAddress)
 
 
+// Base message class; includes type, routing, and error checking information
 struct Message {
 	friend class boost::serialization::access;
 	// Action flag must be enumerator.
@@ -74,6 +75,7 @@ struct Message {
 		ar& messageHash;
 	}
 
+	// Function that converts the message into a size_t for validation
 	size_t hash() const {
 		std::string str = hashString();
 		size_t hash = 0;
@@ -83,15 +85,17 @@ struct Message {
 		return hash;
 	}
 protected:
+	// Virtual function that compiles all the information about a message into a single string that can be "hash"ed
 	virtual std::string hashString() const {
 		return std::to_string((int)type)
 			+ receiverNode.toString()
 			+ originatorNode.toString();
 	}
 };
-// Disconnect and link-lost messages use the originator node to mark the node that the network can no longer see.
+// Some messages without unique subclassess use the originator node to mark the node that the network can no longer see.
 
 
+// Message carring an aribtrary string message (mostly used for debugging)
 struct PayloadMessage : Message {
 	friend class boost::serialization::access;
 	// Arbitrary data this message carries as a payload
@@ -107,6 +111,7 @@ protected:
 	std::string hashString() const override { return Message::hashString() + payload; }
 };
 
+// Message carrying a request that another message be resent
 struct ResendRequestMessage : Message {
 	friend class boost::serialization::access;
 	// Hash of the message that should be resent
@@ -122,6 +127,7 @@ protected:
 	std::string hashString() const override { return Message::hashString() + std::to_string(requestedHash); }
 };
 
+// Base message type for messages involving a file, contains the file in question and the timestamp it was last modified
 struct FileMessage : Message {
    	friend class boost::serialization::access;
 	// To target specific file in path.
@@ -162,6 +168,7 @@ protected:
 	}
 };
 
+// File content message containing the contents of the file as a payload
 struct FileContentMessage : FileMessage {
 	//File content created.
 	std::string fileContent;
@@ -176,6 +183,8 @@ protected:
 	std::string hashString() const override { return FileMessage::hashString() + fileContent; }
 };
 
+
+// File inital sync message, a content message with additional information indicating how many files need to be recieved before our state is synced with the network
 struct FileInitialSyncMessage: FileContentMessage {
 	// Variable tracking the total number of files to be synced
 	size_t total,
@@ -193,6 +202,7 @@ protected:
 	std::string hashString() const override { return FileContentMessage::hashString() + std::to_string(total) + std::to_string(index); }
 };
 
+// File message carrying a list of changes that were made to the file
 struct FileChangeMessage : FileMessage {
 	//File content changed.
 	std::string fChange;
@@ -208,6 +218,7 @@ protected:
 	std::string hashString() const override { return FileMessage::hashString() + fChange; }
 };
 
+// Message providing extra infromation needed when we connect: backup gateway ips and the paths we should be sweeping
 struct ConnectMessage : Message {
 	// List containing backup IPs
 	std::vector<std::pair<zt::IpAddress, uint16_t>> backupPeers;

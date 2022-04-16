@@ -18,8 +18,6 @@ void signalCallbackHandler(int signum) {
 
 // Callback called whenever a file is created
 void onFileCreated(const std::filesystem::path& path) {
-	std::cout << path << " created!" << std::endl;
-
 	// Propigate the file's creation
 	FileContentMessage m;
 	m.type = Message::Type::contentChange;
@@ -36,13 +34,11 @@ void onFileCreated(const std::filesystem::path& path) {
 
 // Callback called whenever a file is modified
 void onFileModified(const std::filesystem::path& path) {
-	std::cout << path << " modified!" << std::endl;
+
 }
 
 // Callback called whenever a file is deleted
 void onFileDeleted(const std::filesystem::path& path) {
-	std::cout << path << " deleted!" << std::endl;
-
 	// Propigate the file's deletion
 	FileMessage m;
 	m.type = Message::Type::deleteFile;
@@ -53,8 +49,6 @@ void onFileDeleted(const std::filesystem::path& path) {
 
 // Callback called whenever a file is fast-tracked
 void onFileFastTracked(const std::filesystem::path& path) {
-	std::cout << path << " fast tracked!" << std::endl;
-
 	// Propigate a lock through the network
 	FileMessage m;
 	m.type = Message::Type::lock;
@@ -65,8 +59,6 @@ void onFileFastTracked(const std::filesystem::path& path) {
 
 // Callback called whenever a file is unfast-tracked
 void onFileUnFastTracked(const std::filesystem::path& path) {
-	std::cout << path << " UNfast tracked!" << std::endl;
-
 	// Propigate an unlock through the network
 	FileMessage m;
 	m.type = Message::Type::unlock;
@@ -112,14 +104,7 @@ int main(int argc, char** argv) {
 			auto _ = COMMAND_LINE_ARGS.parse(2, (char**) dummy.data());
 		} else
 			path = relative(path);
-	
-	{
-		std::string a = "Hello Bob!", b = "Hello Barb!";
-		auto diff = extractDiff(a, b);
 
-		std::cout << applyDiff(a, diff) << std::endl; // Converts a to "Hello Barb!"
-		std::cout << undoDiff(b, diff) << std::endl; // Converts b to "Hello Bob!"
-	}
 
 
 	// Setup the networking components in a thread (it takes a while so we also tidy up the filesystem at the same time)
@@ -162,24 +147,12 @@ int main(int argc, char** argv) {
 		// Note the time this loop iteration starts
 		auto start = std::chrono::system_clock::now();
 
-		// Generate a message with an arbitrary payload
-		// PayloadMessage m;
-		// m.type = Message::Type::payload;
-		// std::time_t now = std::time(nullptr);
-		// m.payload = std::to_string(sweeper.iteration) + std::asctime(std::localtime(&now));
-		// Send the payload message
-		// PeerManager::singleton().send(m);
-
 		// Sweep the file system, with a total sweep every 10 iterations (10 seconds)
 		sweeper.totalSweepEveryN(10);
 
 		// Process messages until a second has elapsed since the start of the loop
 		while(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start).count() < 1000)
 			MessageManager::singleton().processNextMessage();
-
-
-		std::cout << "connected = " << MessageManager::singleton().isFinishedConnecting() << " files = " << MessageManager::singleton().recievedInitialFiles << "/" << MessageManager::singleton().totalInitialFiles << std::endl;
-		std::cout << "dt = " << std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start).count() << std::endl;
 	}
 
 	return 0;

@@ -27,29 +27,28 @@ public:
 		ZTCPP_THROW_ON_ERROR(zt::Config::allowIdentityCaching(true), ZTError);
 		ZTCPP_THROW_ON_ERROR(zt::Config::setPort(ztServicePort), ZTError);
 
-		std::cout << "Starting ZeroTier service..." << std::endl;
+		std::cout << "[ZT] Starting ZeroTier service..." << std::endl;
 		zt::LocalNode::setEventHandler(this);
 		ZTCPP_THROW_ON_ERROR(zt::LocalNode::start(), ZTError);
 
-		std::cout << "Waiting for node to come online..." << std::endl;
+		std::cout << "[ZT] Waiting for node to come online..." << std::endl;
 		while (!online)
 			std::this_thread::sleep_for(100ms);
 
 		ZTCPP_THROW_ON_ERROR(zt::Network::join(ztNetworkID), ZTError);
 
-		std::cout << "Waiting to join network..." << std::endl;
+		std::cout << "[ZT] Waiting to join network..." << std::endl;
 		while (networksJoinedCount <= 0)
-			std::this_thread::sleep_for(1s);
+			std::this_thread::sleep_for(100ms);
 
-		std::cout << "ZeroTier service started!" << std::endl;
+		std::cout << "[ZT] ZeroTier service started!" << std::endl;
 	}
 
 	// Disconnect from ZeroTier on shutdown
 	~ZeroTierNode() {
 		zt::LocalNode::stop();
-		// std::this_thread::sleep_for(100ms); // TODO: Is this needed?
 		zt::LocalNode::setEventHandler(nullptr);
-		std::cout << "ZeroTier service terminated" << std::endl;
+		std::cout << "[ZT] ZeroTier service terminated" << std::endl;
 	}
 
 	bool isOnline() const { return online; }
@@ -67,14 +66,14 @@ public:
 
 
 	void onAddressEvent(zt::EventCode::Address code, const zt::AddressDetails* details) noexcept override {
-		std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
+		// std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
 
 		if (details && (code == zt::EventCode::Address::AddedIPv4 || code == zt::EventCode::Address::AddedIPv6))
 			ip = details->getIpAddress();
 	}
 
 	void onNetworkEvent(zt::EventCode::Network code, const zt::NetworkDetails* details) noexcept override {
-		std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
+		// std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
 
 		if (code == zt::EventCode::Network::ReadyIPv4 ||
 				code == zt::EventCode::Network::ReadyIPv6 ||
@@ -85,15 +84,15 @@ public:
 	}
 
 	void onNetworkInterfaceEvent(zt::EventCode::NetworkInterface code, const zt::NetworkInterfaceDetails* details) noexcept override {
-		std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
+		// std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
 	}
 
 	void onNetworkStackEvent(zt::EventCode::NetworkStack code, const zt::NetworkStackDetails* details) noexcept override {
-		std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
+		// std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
 	}
 
 	void onNodeEvent(zt::EventCode::Node code, const zt::NodeDetails* details) noexcept override {
-		std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
+		// std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
 
 		if (code == zt::EventCode::Node::Online)
 			online = true;
@@ -102,15 +101,15 @@ public:
 	}
 
 	void onPeerEvent(zt::EventCode::Peer code, const zt::PeerDetails* details) noexcept override {
-		std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
+		// std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
 	}
 
 	void onRouteEvent(zt::EventCode::Route code, const zt::RouteDetails* details) noexcept override {
-		std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
+		// std::cout << "[ZT] " << zt::EventDescription(code, details) << std::endl;
 	}
 
 	void onUnknownEvent(int16_t rawEventCode) noexcept override {
-		std::cout << "[ZT] " << "An unknown Zero Tier event was dispatched (" << rawEventCode << ")" << std::endl;
+		// std::cout << "[ZT] " << "An unknown Zero Tier event was dispatched (" << rawEventCode << ")" << std::endl;
 	}
 };
 
