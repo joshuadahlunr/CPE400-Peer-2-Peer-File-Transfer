@@ -43,12 +43,16 @@ bool MessageManager::validateMessageHash(const Message& m, uint8_t offset /*= 0*
 
 // Function that processes a resend request
 bool MessageManager::processResendRequestMessage(const ResendRequestMessage& request) {
+	// If we are the source of the resend abort
+	if(request.originatorNode == ZeroTierNode::singleton().getIP())
+		return true;
+
 	// Find the message that needs to be resent in the old message cache, then resend it
 	for(auto& m: oldMessages) {
 		if(m->messageHash == request.requestedHash) {
 			switch(m->type) {
 			break; case Message::Type::payload:				PeerManager::singleton().send(reference_cast<PayloadMessage>(*m), request.originalDestination);
-			break; case Message::Type::resendRequest:		PeerManager::singleton().send(reference_cast<ResendRequestMessage>(*m), request.originalDestination);
+			// break; case Message::Type::resendRequest:		PeerManager::singleton().send(reference_cast<ResendRequestMessage>(*m), request.originalDestination);
 			break; case Message::Type::lock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originalDestination);
 			break; case Message::Type::unlock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originalDestination);
 			break; case Message::Type::deleteFile:			PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originalDestination);
