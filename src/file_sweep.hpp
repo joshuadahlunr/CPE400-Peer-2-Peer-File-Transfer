@@ -38,16 +38,6 @@ struct FilesystemSweeper {
 		// Remove all of the .wnts folders
 		for(auto& folder: folders)
 			remove_all(folder / ".wnts");
-
-		// Paths to the files this sweep should scan
-		std::vector<std::filesystem::path> paths = enumerateAllFiles(folders);
-
-		// Copy all of the files into the .wnts folder
-		for(auto& path: paths) {
-			auto wnts = wntsPath(path);
-			create_directories(wnts.remove_filename());
-			copy(path, wnts, std::filesystem::copy_options::update_existing);
-		}
 	}
 
 	// Function which calls sweep, automatically preforming a total sweep every <n> iterations
@@ -91,6 +81,9 @@ struct FilesystemSweeper {
 					touch(path);
 					pair.first = last_write_time(path);
 
+					// If the file wasn't already in the fast tracked list, it has been added!
+					if(fastTrackTimestamps.find(path) == fastTrackTimestamps.end())
+						onFileFastTracked(path);
 					fastTrackTimestamps[path] = pair; // Mark the file as being fast tracked
 				// If our stored timestamp for this file is older than its most recent timestamp it has been modified
 				} else if((*timestamps)[path].first < timestamp) {

@@ -13,7 +13,7 @@ auto lockFilePath(const std::filesystem::path& p) {
 auto loadLockFile(const std::filesystem::path& p) {
 	std::pair<FileMessage, std::filesystem::perms> out;
 
-	std::fstream fin(lockFilePath(p), std::ios::in | std::ios::binary);
+	std::ifstream fin(lockFilePath(p), std::ios::binary);
 	boost::archive::binary_iarchive ar(fin, archiveFlags);
 	ar >> out.first;
 	ar >> out.second;
@@ -91,13 +91,15 @@ bool MessageManager::processLockMessage(const FileMessage& m) {
 	// Check for read permissions.
 	std::filesystem::perms check = std::filesystem::status(m.targetFile).permissions();
 	if((check & readPerms) != std::filesystem::perms::none) {
-		// Check to see if there are write permissions which means not locked.
-		if((check & writePerms) != std::filesystem::perms::none) {
+		// Check to see if there are write permissions or the lock file doesn't exist which means not locked.
+		if((check & writePerms) != std::filesystem::perms::none || !exists(lockPath)) {
 			// Lock file by writing to file and change permissions.
 			std::filesystem::permissions(m.targetFile, writePerms, std::filesystem::perm_options::remove);
 
 			// Open lock file
-			std::fstream fout(lockPath, std::ios::out | std::ios::binary);
+			auto folder = lockPath;
+			create_directories(folder.remove_filename());
+			std::ofstream fout(lockPath, std::ios::binary);
 			boost::archive::binary_oarchive ar(fout, archiveFlags);
 			// Save message in file and save old permissions
 			ar << m;
@@ -113,7 +115,9 @@ bool MessageManager::processLockMessage(const FileMessage& m) {
 
 			if(m.timestamp < oldLock.timestamp) {
 				// Open lock file
-				std::fstream fout(lockPath, std::ios::out | std::ios::binary);
+				std::ofstream fout(lockPath, std::ios::binary);
+				auto folder = lockPath;
+				create_directories(folder.remove_filename());
 				boost::archive::binary_oarchive ar(fout, archiveFlags);
 				// Save message in file and save old permissions
 				ar << m;
@@ -204,12 +208,6 @@ bool MessageManager::processContentFileMessage(const FileContentMessage& m) {
 	fout << m.fileContent;
 	fout.close();
 
-	// Copy the file into the .wnts folder (if it exists)
-	auto wnts = wntsPath(m.targetFile);
-	auto wntsFolder = wnts;
-	create_directories(wntsFolder.remove_filename());
-	copy(m.targetFile, wnts, std::filesystem::copy_options::update_existing);
-
 	// Message was successfully processed, no need to add back to queue
 	return true;
 }
@@ -227,12 +225,6 @@ bool MessageManager::processInitialFileSyncMessage(const FileInitialSyncMessage&
 	std::ofstream fout(m.targetFile);
 	fout << m.fileContent;
 	fout.close();
-
-	// Copy the file into the .wnts folder
-	auto wnts = wntsPath(m.targetFile);
-	auto wntsFolder = wnts;
-	create_directories(wntsFolder.remove_filename());
-	copy(m.targetFile, wnts, std::filesystem::copy_options::update_existing);
 
 	// Message was successfully processed, no need to add back to queue
 	return true;
