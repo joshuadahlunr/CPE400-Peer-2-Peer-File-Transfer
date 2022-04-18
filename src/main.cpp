@@ -153,5 +153,5 @@ int main(int argc, char** argv) {
 			MessageManager::singleton().processNextMessage();
 	}
 
-	return 0;
+	signalCallbackHandler(0);
 }

@@ -56,6 +56,9 @@ struct MessageManager {
 		return instance;
 	}
 
+	// Destructor is responsible for cleaning up
+	~MessageManager();
+
 	// Function which gets a reference to the managed folders, and sets up the circular buffer to free released pointers
 	void setup(std::vector<std::filesystem::path>& folders) {
 		this->folders = &folders;

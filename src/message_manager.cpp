@@ -36,6 +36,21 @@ bool MessageManager::validateMessageHash(const Message& m, uint8_t offset /*= 0*
 	return true;
 }
 
+// Destructor is responsible for cleaning up
+MessageManager::~MessageManager (){
+	// Process all of the messages currently waiting in the queue
+	// NOTE: The peer manager be shutdown first, so we don't need to worry about additional messages while we are trying to shutdown
+	while(!messageQueue->empty())
+		processNextMessage();
+
+	// Make sure that none of the folders are considered locked (prevents weird permission errors on the next run of the program)
+	for(auto path: enumerateAllFiles(*folders))
+		if(exists(lockFilePath(path))) {
+			auto [_, permsToAdd] = loadLockFile(path);
+			std::filesystem::permissions(path, permsToAdd, std::filesystem::perm_options::add);
+		}
+}
+
 
 // -- Message Processing Functions --
 
@@ -148,7 +163,7 @@ bool MessageManager::processUnlockMessage(const FileMessage& m) {
 		if(m.originatorNode == oldLock.originatorNode) {
 			//if path exists check to see if lock exists.
 			std::filesystem::perms check = std::filesystem::status(m.targetFile).permissions();
-			
+
 			// Check to see if there are write permissions, if there are then file is unlocked.
 			if((check & writePerms) == std::filesystem::perms::none) {
 				// File is locked add permissions to unlock
