@@ -131,8 +131,18 @@ int main(int argc, char** argv) {
 
 	// If we have a peer to connect to from the command line, add them to our list of peers
 	if(remoteIP.isValid()) {
-		peers->emplace_back(std::move(Peer::connect(remoteIP, port)));
-		PeerManager::singleton().setGatewayIP(remoteIP); // Mark the remote IP as our "gateway" to the rest of the network
+		try {
+			std::cout << "Attempting to connect to " << remoteIP << "..." << std::endl;
+			peers->emplace_back(std::move(Peer::connect(remoteIP, port)));
+			PeerManager::singleton().setGatewayIP(remoteIP); // Mark the remote IP as our "gateway" to the rest of the network
+			volatile auto _ = peers->back().getSocket().getRemoteIpAddress(); // Call the code's bluff and make sure the connection is valid
+			std::cout << "Connection successful!" << std::endl;
+		} catch (ZTError) {
+			std::cerr << "wnts: Failed to connect to " << remoteIP << std::endl;
+			// Display the usage
+			std::array<const char*, 2> dummy = {argv[0], "fail!"};
+			auto _ = COMMAND_LINE_ARGS.parse(2, (char**) dummy.data());
+		}
 
 	// If we are starting a network, tell the message manager that we are completely connected
 	} else

@@ -53,7 +53,10 @@ public:
 		// Attempt to open a connection <retryAttempts> times
 		for(size_t i = 0; i < retryAttempts && !connectionSocket.isOpen(); i++) {
 			// Pause between each attempt
-			if(i) std::this_thread::sleep_for(timeBetweenAttempts);
+			if(i) {
+				std::cout << "Failed to connect to " << ip << " retrying..." << std::endl;
+				std::this_thread::sleep_for(timeBetweenAttempts);
+			}
 
 			try {
 				ZTCPP_THROW_ON_ERROR(connectionSocket.init(zt::SocketDomain::InternetProtocol_IPv6, zt::SocketType::Stream), ZTError);
