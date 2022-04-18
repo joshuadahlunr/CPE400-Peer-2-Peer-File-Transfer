@@ -24,8 +24,12 @@ void onFileCreatedOrModified(const std::filesystem::path& path) {
 	m.timestamp = convertTimepoint<std::chrono::system_clock::time_point>(last_write_time(path));
 
 	// Read the entire content of the file
-	std::ifstream fin(path);
-	std::getline(fin, m.fileContent, '\0');
+	std::ifstream fin(path, std::ios::binary);
+	fin.seekg(0, std::ios::end);
+	size_t size = fin.tellg();
+	fin.seekg(0, std::ios::beg);
+	m.fileContent.resize(size);
+	fin.read(&m.fileContent[0], size);
 	fin.close();
 
 	PeerManager::singleton().send(m); // Broadcast the message

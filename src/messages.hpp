@@ -17,9 +17,9 @@
 #include "networking_include_everywhere.hpp"
 
 
-// Support de/serialization of IP Addresses
 namespace boost::serialization {
 
+	// Support de/serialization of IP Addresses
 	template<class Archive>
 	void save(Archive& ar, const zt::IpAddress& ip, const unsigned int version) {
 		auto family = ip.getAddressFamily();
@@ -48,9 +48,27 @@ namespace boost::serialization {
 		}
 	}
 
+	// Support de/serialization of std::filesystem::paths
+	template<class Archive>
+	void save(Archive& ar, const std::filesystem::path& p, const unsigned int version) {
+		std::vector<std::string> parts;
+		for(auto part: p.lexically_normal())
+			parts.emplace_back(part.string());
+		ar & parts;
+	}
+
+	template<class Archive>
+	void load(Archive& ar, std::filesystem::path& p, const unsigned int version) {
+		std::vector<std::string> parts;
+		ar & parts;
+		p.clear();
+		for(auto& part: parts)
+			p /= part;
+	}
+
 } // namespace boost::serialization
 BOOST_SERIALIZATION_SPLIT_FREE(zt::IpAddress)
-
+BOOST_SERIALIZATION_SPLIT_FREE(std::filesystem::path)
 
 // Base message class; includes type, routing, and error checking information
 struct Message {
@@ -116,15 +134,18 @@ struct ResendRequestMessage : Message {
 	friend class boost::serialization::access;
 	// Hash of the message that should be resent
 	size_t requestedHash;
+	// Original destination IP address
+	zt::IpAddress originalDestination;
 
 	template <typename Archive>
 	void serialize(Archive& ar, const unsigned int version) {
 		ar& boost::serialization::base_object<Message>(*this);
 		ar& requestedHash;
+		ar& originalDestination;
 	}
 
 protected:
-	std::string hashString() const override { return Message::hashString() + std::to_string(requestedHash); }
+	std::string hashString() const override { return Message::hashString() + std::to_string(requestedHash) + originalDestination.toString(); }
 };
 
 // Base message type for messages involving a file, contains the file in question and the timestamp it was last modified
@@ -139,7 +160,7 @@ struct FileMessage : Message {
     void save(Archive & ar, const unsigned int version) const {
 		ar& boost::serialization::base_object<Message>(*this);
 		// Save target file as a string
-        ar& targetFile.string();
+        ar& targetFile;
 		// Save the timestamp as a time_t (long int)
 		ar& std::chrono::system_clock::to_time_t(timestamp);
     }
@@ -148,9 +169,7 @@ struct FileMessage : Message {
 		ar& boost::serialization::base_object<Message>(*this);
 
 		// Load target file as a string and then convert it
-		std::string tempFile;
-        ar& tempFile;
-		targetFile = tempFile;
+        ar& targetFile;
 
 		// Load the timestamp as a time_t and then convert it
 		time_t tm;
@@ -214,6 +233,7 @@ struct ConnectMessage : Message {
 	void serialize(Archive& ar, const unsigned int version) {
 		ar& boost::serialization::base_object<Message>(*this);
 		ar& backupPeers;
+		ar& managedPaths;
 	}
 
 	std::string hashString() const override {

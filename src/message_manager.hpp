@@ -107,7 +107,7 @@ struct MessageManager {
 		}
 		break; case Message::Type::contentChange: {
 			auto& m = reference_cast<FileContentMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] create " << m.targetFile << std::endl;
+			std::cout << "[" << m.originatorNode << "] modify " << m.targetFile << std::endl;
 			requeuePriority = processContentFileMessage(m) ? -1 : filePriority + 1;
 		}
 		break; case Message::Type::initialSync: {

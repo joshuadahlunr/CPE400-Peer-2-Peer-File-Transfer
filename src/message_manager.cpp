@@ -29,6 +29,7 @@ bool MessageManager::validateMessageHash(const Message& m, uint8_t offset /*= 0*
 		ResendRequestMessage resend;
 		resend.type = Message::Type::resendRequest;
 		resend.requestedHash = m.messageHash;
+		resend.originalDestination = m.receiverNode;
 		// Request that the message be resent by its sender
 		PeerManager::singleton().send(resend, m.senderNode);
 		return false;
@@ -46,17 +47,17 @@ bool MessageManager::processResendRequestMessage(const ResendRequestMessage& req
 	for(auto& m: oldMessages) {
 		if(m->messageHash == request.requestedHash) {
 			switch(m->type) {
-			break; case Message::Type::payload:				PeerManager::singleton().send(reference_cast<PayloadMessage>(*m), request.originatorNode);
-			break; case Message::Type::resendRequest:		PeerManager::singleton().send(reference_cast<ResendRequestMessage>(*m), request.originatorNode);
-			break; case Message::Type::lock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);
-			break; case Message::Type::unlock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);
-			break; case Message::Type::deleteFile:			PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originatorNode);
-			break; case Message::Type::contentChange:		PeerManager::singleton().send(reference_cast<FileContentMessage>(*m), request.originatorNode);
-			break; case Message::Type::initialSync:			PeerManager::singleton().send(reference_cast<FileInitialSyncMessage>(*m), request.originatorNode);
-			break; case Message::Type::initialSyncRequest:	PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);
-			break; case Message::Type::connect:				PeerManager::singleton().send(reference_cast<ConnectMessage>(*m), request.originatorNode);
-			break; case Message::Type::disconnect:			PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);
-			break; case Message::Type::linkLost:			PeerManager::singleton().send(reference_cast<Message>(*m), request.originatorNode);
+			break; case Message::Type::payload:				PeerManager::singleton().send(reference_cast<PayloadMessage>(*m), request.originalDestination);
+			break; case Message::Type::resendRequest:		PeerManager::singleton().send(reference_cast<ResendRequestMessage>(*m), request.originalDestination);
+			break; case Message::Type::lock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originalDestination);
+			break; case Message::Type::unlock:				PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originalDestination);
+			break; case Message::Type::deleteFile:			PeerManager::singleton().send(reference_cast<FileMessage>(*m), request.originalDestination);
+			break; case Message::Type::contentChange:		PeerManager::singleton().send(reference_cast<FileContentMessage>(*m), request.originalDestination);
+			break; case Message::Type::initialSync:			PeerManager::singleton().send(reference_cast<FileInitialSyncMessage>(*m), request.originalDestination);
+			break; case Message::Type::initialSyncRequest:	PeerManager::singleton().send(reference_cast<Message>(*m), request.originalDestination);
+			break; case Message::Type::connect:				PeerManager::singleton().send(reference_cast<ConnectMessage>(*m), request.originalDestination);
+			break; case Message::Type::disconnect:			PeerManager::singleton().send(reference_cast<Message>(*m), request.originalDestination);
+			break; case Message::Type::linkLost:			PeerManager::singleton().send(reference_cast<Message>(*m), request.originalDestination);
 			break; default:
 				throw std::runtime_error("Unrecognized message type");
 			}
