@@ -161,20 +161,17 @@ private:
 	// Function that deserializes a message received from the network and adds it to the message queue
 	void deserializeMessage(const std::span<std::byte> data) const {
 		// Extract the type of message
-		Message::Type type = (Message::Type) uint8_t(data[5]);
-		if((uint8_t)type == 0) type = (Message::Type) uint8_t(data[10]);
-		if((uint8_t)type == 0) type = (Message::Type) uint8_t(data[15]);
-		if((uint8_t)type == 0) type = (Message::Type) uint8_t(data[20]);
+		Message::Type type = (Message::Type) uint8_t(data[0]);
 		// Copy the data into a deserialization buffer
 		std::stringstream backing({(char*) data.data(), data.size()});
-		boost::archive::binary_iarchive ar(backing, archiveFlags);
+		cereal::BinaryInputArchive ar(backing);
 
 
 		// Deserialize the message as the same type of message that was delivered and add it to the message queue
 		switch(type) {
 		break; case Message::Type::payload: {
 			auto m = std::make_unique<PayloadMessage>();
-			ar >> *m;
+			ar(*m);
 
 			// Validate message hash
 			if(!validateMessageHash(*m))
@@ -184,7 +181,7 @@ private:
 		}
 		break; case Message::Type::resendRequest: {
 			auto m = std::make_unique<ResendRequestMessage>();
-			ar >> *m;
+			ar(*m);
 
 			// Validate message hash
 			if(!validateMessageHash(*m))
@@ -194,7 +191,7 @@ private:
 		}
 		break; case Message::Type::lock: {
 			auto m = std::make_unique<FileMessage>();
-			ar >> *m;
+			ar(*m);
 
 			// Validate message hash
 			if(!validateMessageHash(*m, 1))
@@ -204,7 +201,7 @@ private:
 		}
 		break; case Message::Type::unlock: {
 			auto m = std::make_unique<FileMessage>();
-			ar >> *m;
+			ar(*m);
 
 			// Validate message hash
 			if(!validateMessageHash(*m, 1))
@@ -214,7 +211,7 @@ private:
 		}
 		break; case Message::Type::deleteFile: {
 			auto m = std::make_unique<FileMessage>();
-			ar >> *m;
+			ar(*m);
 
 			// Validate message hash
 			if(!validateMessageHash(*m, 1))
@@ -224,7 +221,7 @@ private:
 		}
 		break; case Message::Type::contentChange: {
 			auto m = std::make_unique<FileContentMessage>();
-			ar >> *m;
+			ar(*m);
 
 			// Validate message hash
 			if(!validateMessageHash(*m, 1))
@@ -234,7 +231,7 @@ private:
 		}
 		break; case Message::Type::initialSync: {
 			auto m = std::make_unique<FileInitialSyncMessage>();
-			ar >> *m;
+			ar(*m);
 
 			// Validate message hash
 			if(!validateMessageHash(*m, 1))
@@ -244,7 +241,7 @@ private:
 		}
 		break; case Message::Type::connect:{
 			auto m = std::make_unique<ConnectMessage>();
-			ar >> *m;
+			ar(*m);
 
 			// Validate message hash
 			if(!validateMessageHash(*m))
@@ -254,7 +251,7 @@ private:
 		}
 		break; case Message::Type::disconnect: {
 			auto m = std::make_unique<Message>();
-			ar >> *m;
+			ar(*m);
 
 			// Validate message hash
 			if(!validateMessageHash(*m))

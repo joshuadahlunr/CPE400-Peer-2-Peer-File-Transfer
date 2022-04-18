@@ -14,9 +14,8 @@ auto loadLockFile(const std::filesystem::path& p) {
 	std::pair<FileMessage, std::filesystem::perms> out;
 
 	std::ifstream fin(lockFilePath(p), std::ios::binary);
-	boost::archive::binary_iarchive ar(fin, archiveFlags);
-	ar >> out.first;
-	ar >> out.second;
+	cereal::BinaryInputArchive ar(fin);
+	ar (out.first, out.second);
 	fin.close();
 
 	return out;
@@ -105,10 +104,9 @@ bool MessageManager::processLockMessage(const FileMessage& m) {
 			auto folder = lockPath;
 			create_directories(folder.remove_filename());
 			std::ofstream fout(lockPath, std::ios::binary);
-			boost::archive::binary_oarchive ar(fout, archiveFlags);
+			cereal::BinaryOutputArchive ar(fout);
 			// Save message in file and save old permissions
-			ar << m;
-			ar << (check & writePerms);
+			ar(m, (check & writePerms));
 
 			fout.close();
 		}
@@ -123,10 +121,9 @@ bool MessageManager::processLockMessage(const FileMessage& m) {
 				std::ofstream fout(lockPath, std::ios::binary);
 				auto folder = lockPath;
 				create_directories(folder.remove_filename());
-				boost::archive::binary_oarchive ar(fout, archiveFlags);
+				cereal::BinaryOutputArchive ar(fout);
 				// Save message in file and save old permissions
-				ar << m;
-				ar << (check & writePerms);
+				ar (m, (check & writePerms));
 
 				fout.close();
 			}

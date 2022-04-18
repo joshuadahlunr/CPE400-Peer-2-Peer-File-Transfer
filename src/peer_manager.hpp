@@ -99,7 +99,7 @@ public:
 
 		// Serialize the data
 		std::stringstream stream;
-		boost::archive::binary_oarchive ar(stream, archiveFlags);
+		cereal::BinaryOutputArchive ar(stream);
 		ar << msg;
 
 		// Forward the data (based on the added routing information)

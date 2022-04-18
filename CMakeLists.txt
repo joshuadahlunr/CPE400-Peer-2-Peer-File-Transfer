@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 project(WhisperNetTransferSystem LANGUAGES C CXX)
 
-find_package(Boost REQUIRED system serialization)
+find_package(Boost REQUIRED system)
 find_package(Threads)
 add_subdirectory("thirdparty/libzt")
 
@@ -22,7 +22,7 @@ target_link_libraries(ztcpp PUBLIC zt-static Threads::Threads)
 add_subdirectory("${thirdparty}Argos")
 
 file(GLOB sources "src/*.cpp" "src/*.c")
-set(includes "src/" "src/client" "src/server" ${Boost_INCLUDE_DIRS} "${thirdparty}" "${ztcpppath}Include/" "${thirdparty}libzt/include")
+set(includes "src/" "src/client" "src/server" ${Boost_INCLUDE_DIRS} "${thirdparty}" "${ztcpppath}Include/" "${thirdparty}libzt/include" "${thirdparty}cereal/include")
 set(libraries Threads::Threads ztcpp Argos ${Boost_LIBRARIES})
 
 add_executable (wnts ${sources} ${clientSources})

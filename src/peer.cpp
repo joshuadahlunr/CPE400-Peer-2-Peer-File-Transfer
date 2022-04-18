@@ -84,9 +84,9 @@ void Peer::threadFunction(std::stop_token stop) {
 void Peer::processMessage(std::span<std::byte> data) {
 	// Deserialize the root message "header" containing routing data
 	std::stringstream backing({(char*) data.data(), sizeof(Message)});
-	boost::archive::binary_iarchive ar(backing, boost::archive::no_header);
+	cereal::BinaryInputArchive ar(backing);
 	Message m;
-	ar >> m;
+	ar(m);
 	// If we don't know who sent this bit of data, assume it came from the connected peer
 	if(m.senderNode == zt::IpAddress::ipv6Unspecified()) m.senderNode = getRemoteIP();
 
