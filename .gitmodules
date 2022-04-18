@@ -10,3 +10,6 @@
 [submodule "thirdparty/dtl"]
 	path = thirdparty/dtl
 	url = https://github.com/cubicdaiya/dtl.git
+[submodule "thirdparty/cereal"]
+	path = thirdparty/cereal
+	url = https://github.com/USCiLab/cereal.git
