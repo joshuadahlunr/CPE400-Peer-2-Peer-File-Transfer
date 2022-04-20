@@ -112,8 +112,9 @@ bool MessageManager::processLockMessage(const FileMessage& m) {
 	if((check & readPerms) != std::filesystem::perms::none) {
 		// Check to see if there are write permissions or the lock file doesn't exist which means not locked.
 		if((check & writePerms) != std::filesystem::perms::none || !exists(lockPath)) {
-			// Lock file by writing to file and change permissions.
-			std::filesystem::permissions(m.targetFile, writePerms, std::filesystem::perm_options::remove);
+			// Prevent us from writing to the file (unless we took the lock)
+			if(m.originatorNode != ZeroTierNode::singleton().getIP())
+				std::filesystem::permissions(m.targetFile, writePerms, std::filesystem::perm_options::remove);
 
 			// Open lock file
 			auto folder = lockPath;
