@@ -1,3 +1,9 @@
+/*
+	Name: Joshua Dahl, Antonio Massa, and Annette McDonough
+	Date: 4/19/22
+
+	Implementation for Peer.hpp, provides the functions that run in the listening threads 
+*/
 #include "peer.hpp"
 #include "peer_manager.hpp"
 

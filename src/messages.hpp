@@ -1,8 +1,8 @@
 /*
-	Name: Antonio Massa
-	Date: 3/27/2022
+	Name: Joshua Dahl, Antonio Massa, and Annette McDonough
+	Date: 4/19/22
 
-	Modified from messages.hpp by Annette
+	File that provides different messages that are propigated through the network carying paramters for remote procedure calls.
 */
 #ifndef __MESSAGES_HPP__
 #define __MESSAGES_HPP__

@@ -1,3 +1,10 @@
+/*
+	Name: Joshua Dahl, Antonio Massa, and Annette McDonough
+	Date: 4/19/22
+
+	Provides a connection to the Zero Tier, preforms all of the setup to make connection to Zero Tier possible
+*/
+
 #ifndef __NODE_HPP__
 #define __NODE_HPP__
 

@@ -1,3 +1,10 @@
+/*
+	Name: Joshua Dahl, Antonio Massa, and Annette McDonough
+	Date: 4/19/22
+
+	Implementation of the message manager, provides processing for the different remote messages
+*/
+
 #include "peer_manager.hpp"
 #include "message_manager.hpp"
 

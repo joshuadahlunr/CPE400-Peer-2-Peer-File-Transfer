@@ -1,4 +1,9 @@
-// This file includes all of the includes and definitions needed for networking
+/*
+	Name: Joshua Dahl, Antonio Massa, and Annette McDonough
+	Date: 4/19/22
+
+	This file includes all of the includes and definitions needed for networking
+*/
 
 #ifndef __NETWORKING_HPP__
 #define __NETWORKING_HPP__

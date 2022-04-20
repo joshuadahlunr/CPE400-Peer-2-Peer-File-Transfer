@@ -1,4 +1,9 @@
-// This files includes all of the includes and definitions needed everywhere
+/*
+	Name: Joshua Dahl, Antonio Massa, and Annette McDonough
+	Date: 4/19/22
+
+	This files includes all of the includes and definitions needed everywhere
+*/
 
 #ifndef __INCLUDE_EVERYWHERE_HPP__
 #define __INCLUDE_EVERYWHERE_HPP__

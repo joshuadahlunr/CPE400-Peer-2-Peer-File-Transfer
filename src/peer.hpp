@@ -1,3 +1,9 @@
+/*
+	Name: Joshua Dahl, Antonio Massa, and Annette McDonough
+	Date: 4/19/22
+
+	File that provides a Peer, a wrapper around a TCP socket that listens for messages and delivers them to Peer Manager for routing and processing.
+*/
 #ifndef __PEER_HPP__
 #define __PEER_HPP__
 

@@ -1,3 +1,10 @@
+/*
+	Name: Joshua Dahl, Antonio Massa, and Annette McDonough
+	Date: 4/19/22
+
+	This file provides a message manager singleton, it is responsible for deserializing and routing messages
+*/
+
 #ifndef __MESSAGE_QUEUE_HPP__
 #define __MESSAGE_QUEUE_HPP__
 

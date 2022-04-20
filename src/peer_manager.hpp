@@ -1,3 +1,9 @@
+/*
+	Name: Joshua Dahl, Antonio Massa, and Annette McDonough
+	Date: 4/19/22
+
+	Provides a Peer Manager that accepts connections from remote peers, and routes messages between peers.
+*/
 #ifndef __PEER_MANAGER_HPP__
 #define __PEER_MANAGER_HPP__
 

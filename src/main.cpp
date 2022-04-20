@@ -1,3 +1,10 @@
+/*
+	Name: Joshua Dahl, Antonio Massa, and Annette McDonough
+	Date: 4/19/22
+
+	Main entry point for our program, sets up networking, runs a file sweep and propigates infromation about changes.
+*/
+
 #include "ztnode.hpp"
 #include "peer_manager.hpp"
 #include "message_manager.hpp"

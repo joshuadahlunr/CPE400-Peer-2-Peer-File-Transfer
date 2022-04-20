@@ -1,3 +1,10 @@
+/*
+	Name: Joshua Dahl, Antonio Massa, and Annette McDonough
+	Date: 4/19/22
+
+	File that provides a class that periodically sweaps the network, calling callback functions when it detects changes
+*/
+
 #ifndef __FILE_SWEEP_HPP__
 #define __FILE_SWEEP_HPP__
 
