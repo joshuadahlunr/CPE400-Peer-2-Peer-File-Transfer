@@ -76,6 +76,7 @@ public:
 					ConnectMessage connectMessage;
 					connectMessage.type = Message::Type::connect;
 					connectMessage.backupPeers = backupPeers;
+					connectMessage.managedPaths = *MessageManager::singleton().folders;
 					send(connectMessage, peerIP); // The write lock must be released before we send, otherwise we have the same thread taking multiple locks
 
 					// Add a message to the queue requesting all of the data be sent to the new node
