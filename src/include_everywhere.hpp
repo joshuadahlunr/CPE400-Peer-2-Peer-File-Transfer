@@ -24,6 +24,9 @@ using namespace std::literals;
 template<typename Out, typename In>
 constexpr inline Out& reference_cast(In& in) { return *((Out*) &in); }
 
+// Variable defining whether or not to print additional messages
+extern bool useVerboseOutput /*= false*/;
+
 
 // Converts an arbitrary time point into another clock's timepoint
 template <typename OutTP /* = std::chrono::system_clock::time_point */, typename InTP>

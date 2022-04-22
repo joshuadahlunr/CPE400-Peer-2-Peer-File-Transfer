@@ -30,8 +30,9 @@ auto loadLockFile(const std::filesystem::path& p) {
 
 // Validate the provided message, returns true if the hashes match, requests a resend and returns false otherwise
 bool MessageManager::validateMessageHash(const Message& m, uint8_t offset /*= 0*/) const {
+	if(useVerboseOutput) std::cout << m.messageHash << " - " << (m.hash() + offset) << std::endl;
 	if(m.messageHash != m.hash() + offset) {
-		std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
+		if(useVerboseOutput) std::cerr << "INVALID MESSAGE" << std::endl << std::endl;
 		ResendRequestMessage resend;
 		resend.type = Message::Type::resendRequest;
 		resend.requestedHash = m.messageHash;

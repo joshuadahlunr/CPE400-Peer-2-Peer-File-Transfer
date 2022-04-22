@@ -97,7 +97,7 @@ struct MessageManager {
 		}
 		break; case Message::Type::resendRequest: {
 			auto& m = reference_cast<ResendRequestMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] resend request message" <<  std::endl;
+			if(useVerboseOutput) std::cout << "[" << m.originatorNode << "] resend request message" <<  std::endl;
 			requeuePriority = processResendRequestMessage(m) ? -1 : resendPriority + 1;
 		}
 		break; case Message::Type::lock: {
@@ -122,12 +122,12 @@ struct MessageManager {
 		}
 		break; case Message::Type::initialSync: {
 			auto& m = reference_cast<FileInitialSyncMessage>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] sync " << m.targetFile << std::endl;
+			if(useVerboseOutput) std::cout << "[" << m.originatorNode << "] sync " << m.targetFile << std::endl;
 			requeuePriority = processInitialFileSyncMessage(m) ? -1 : lockPriority + 1;
 		}
 		break; case Message::Type::initialSyncRequest: {
 			auto& m = reference_cast<Message>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] sync request message" << std::endl;
+			if(useVerboseOutput) std::cout << "[" << m.originatorNode << "] sync request message" << std::endl;
 			requeuePriority = processInitialFileSyncRequestMessage(m) ? -1 : lockPriority + 1;
 		}
 		break; case Message::Type::connect:{
@@ -142,7 +142,7 @@ struct MessageManager {
 		}
 		break; case Message::Type::linkLost: {
 			auto& m = reference_cast<Message>(*msgPtr);
-			std::cout << "[" << m.originatorNode << "] link-lost message" << std::endl;
+			if(useVerboseOutput) std::cout << "[" << m.originatorNode << "] link-lost message" << std::endl;
 			requeuePriority = processLinkLostMessage(m) ? -1 : resendPriority + 1;
 		}
 		break; default:

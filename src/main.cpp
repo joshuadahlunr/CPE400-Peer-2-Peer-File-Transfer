@@ -72,6 +72,9 @@ void onFileUnFastTracked(const std::filesystem::path& path) {
 	PeerManager::singleton().send(m); // Broadcast the message
 }
 
+// Variable defining whether or not to print additional messages
+bool useVerboseOutput = false;
+
 int main(int argc, char** argv) {
 	// Gracefully terminate when interrupted (ctrl + c in terminal)
 	signal(SIGINT, signalCallbackHandler);
@@ -84,10 +87,14 @@ int main(int argc, char** argv) {
         .add(argos::Option{"-c", "--connect", "--remote-address"}.argument("IP")\
             .help("IP address of a peer on the network we wish to join. (If not set, a new network is established)"))\
         .add(argos::Option{"-p", "--port"}.argument("PORT")\
-            .help("Optional port number to connect to (default=" + std::to_string(defaultPort) + ")"))
+            .help("Optional port number to connect to (default=" + std::to_string(defaultPort) + ")"))\
+		.add(argos::Option{"-v", "--verbose"}.argument("VERBOSE")\
+			.initial_value("false")\
+            .help("Flag that enables some extra verbose output"))
 	const argos::ParsedArguments args = COMMAND_LINE_ARGS.parse(argc, argv);
 	uint16_t port = args.value("-p").as_uint(defaultPort);
 	auto remoteIP = zt::IpAddress::ipv6FromString(args.value("-c").as_string());
+	useVerboseOutput = args.value("-v").as_bool();
 	std::vector<std::filesystem::path> folders; boost::split(folders, args.value("-f").as_string(), boost::is_any_of(","));
 
 	// If neither a list of folders nor remote IP are specified, error
