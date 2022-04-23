@@ -52,11 +52,14 @@ MessageManager::~MessageManager (){
 		processNextMessage();
 
 	// Make sure that none of the folders are considered locked (prevents weird permission errors on the next run of the program)
-	for(auto path: enumerateAllFiles(*folders))
-		if(exists(lockFilePath(path))) {
+	for(auto path: enumerateAllFiles(*folders)){
+		auto lockPath = lockFilePath(path);
+		if(exists(lockPath)) {
 			auto [_, permsToAdd] = loadLockFile(path);
 			std::filesystem::permissions(path, permsToAdd, std::filesystem::perm_options::add);
+			remove(lockPath);
 		}
+	}
 }
 
 
@@ -115,42 +118,38 @@ bool MessageManager::processLockMessage(const FileMessage& m) {
 	// Determine where the lock file is located
 	auto lockPath = lockFilePath(m.targetFile);
 
-	// Check for read permissions.
-	std::filesystem::perms check = std::filesystem::status(m.targetFile).permissions();
-	if((check & readPerms) != std::filesystem::perms::none) {
-		// Check to see if there are write permissions or the lock file doesn't exist which means not locked.
-		if((check & writePerms) != std::filesystem::perms::none || !exists(lockPath)) {
-			// Prevent us from writing to the file (unless we took the lock)
-			if(m.originatorNode != ZeroTierNode::singleton().getIP())
-				std::filesystem::permissions(m.targetFile, writePerms, std::filesystem::perm_options::remove);
+	// Check to see if the lock file doesn't exist which means not locked.
+	if(!exists(lockPath)) {
+		// Prevent us from writing to the file (unless we took the lock)
+		if(m.originatorNode != ZeroTierNode::singleton().getIP())
+			std::filesystem::permissions(m.targetFile, writePerms, std::filesystem::perm_options::remove);
 
+		// Open lock file
+		auto folder = lockPath;
+		create_directories(folder.remove_filename());
+		std::ofstream fout(lockPath, std::ios::binary);
+		cereal::BinaryOutputArchive ar(fout);
+		// Save message in file and save old permissions
+		auto perms = std::filesystem::status(m.targetFile).permissions();
+		ar(m, (perms & writePerms));
+
+		fout.close();
+	}
+
+	// File is locked
+	else {
+		auto [oldLock, oldPerms] = loadLockFile(m.targetFile);
+
+		if(m.timestamp < oldLock.timestamp) {
 			// Open lock file
+			std::ofstream fout(lockPath, std::ios::binary);
 			auto folder = lockPath;
 			create_directories(folder.remove_filename());
-			std::ofstream fout(lockPath, std::ios::binary);
 			cereal::BinaryOutputArchive ar(fout);
 			// Save message in file and save old permissions
-			ar(m, (check & writePerms));
+			ar (m, (oldPerms & writePerms));
 
 			fout.close();
-		}
-
-		// File has read only permissions so it is locked.
-		else {
-			FileMessage oldLock;
-			std::tie(oldLock, check) = loadLockFile(m.targetFile);
-
-			if(m.timestamp < oldLock.timestamp) {
-				// Open lock file
-				std::ofstream fout(lockPath, std::ios::binary);
-				auto folder = lockPath;
-				create_directories(folder.remove_filename());
-				cereal::BinaryOutputArchive ar(fout);
-				// Save message in file and save old permissions
-				ar (m, (check & writePerms));
-
-				fout.close();
-			}
 		}
 	}
 
@@ -195,13 +194,22 @@ bool MessageManager::processDeleteFileMessage(const FileMessage& m) {
 		return false;
 
 	// Make sure the file isn't locked
+	std::filesystem::perms perms = std::filesystem::perms::none;
 	if(exists(lockFilePath(m.targetFile))) {
-		auto [lock, _] = loadLockFile(m.targetFile);
+		auto [lock, perms_] = loadLockFile(m.targetFile);
+		perms = perms_;
 
 		// The file can't be deleted because a lock already exists
 		if(lock.originatorNode != ZeroTierNode::singleton().getIP())
 			return true;
+
+		// Don't allow the file to be modified unless this message and the lock have the same source
+		if(lock.originatorNode != m.originatorNode)
+			perms = std::filesystem::perms::none;
 	}
+
+	// Temporarily add the permissions
+	std::filesystem::permissions(m.targetFile, perms, std::filesystem::perm_options::add);
 
 	// Delete the file, its backup, and its lock
 	remove(m.targetFile);
@@ -219,13 +227,22 @@ bool MessageManager::processContentFileMessage(const FileContentMessage& m) {
 		return false;
 
 	// Make sure the file isn't locked
+	std::filesystem::perms perms = std::filesystem::perms::none;
 	if(exists(lockFilePath(m.targetFile))) {
-		auto [lock, _] = loadLockFile(m.targetFile);
+		auto [lock, perms_] = loadLockFile(m.targetFile);
+		perms = perms_;
 
 		// The file can't be deleted because a lock already exists
 		if(lock.originatorNode != ZeroTierNode::singleton().getIP())
 			return true;
+
+		// Don't allow the file to be modified unless this message and the lock have the same source
+		if(lock.originatorNode != m.originatorNode)
+			perms = std::filesystem::perms::none;
 	}
+
+	// Temporarily add the permissions
+	std::filesystem::permissions(m.targetFile, perms, std::filesystem::perm_options::add);
 
 	// Save the file's content (creating any nessicary intermediate directories)
 	auto folder = m.targetFile;
@@ -233,6 +250,9 @@ bool MessageManager::processContentFileMessage(const FileContentMessage& m) {
 	std::ofstream fout(m.targetFile);
 	fout << m.fileContent;
 	fout.close();
+
+	// Remove the temporarily added permissions
+	std::filesystem::permissions(m.targetFile, perms, std::filesystem::perm_options::remove);
 
 	// Message was successfully processed, no need to add back to queue
 	return true;
@@ -281,6 +301,7 @@ bool MessageManager::processInitialFileSyncRequestMessage(const Message& m) {
 		// If the file is locked also send a lock message
 		if(exists(lockFilePath(sync.targetFile))) {
 			auto [lock, _] = loadLockFile(sync.targetFile);
+			lock.timestamp = std::chrono::system_clock::now();
 			PeerManager::singleton().send(lock, m.originatorNode);
 		}
 	}

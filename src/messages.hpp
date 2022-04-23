@@ -89,14 +89,7 @@ struct Message {
 	}
 
 	// Function that converts the message into a size_t for validation
-	size_t hash() const {
-		std::string str = hashString();
-		size_t hash = 0;
-		for(char c: str)
-			hash += c;
-
-		return hash;
-	}
+	size_t hash() const { return ::hash(hashString()); }
 protected:
 	// Virtual function that compiles all the information about a message into a single string that can be "hash"ed
 	virtual std::string hashString() const {

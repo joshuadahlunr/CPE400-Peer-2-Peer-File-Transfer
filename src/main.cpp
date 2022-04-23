@@ -39,7 +39,24 @@ void onFileCreatedOrModified(const std::filesystem::path& path) {
 	fin.read(&m.fileContent[0], size);
 	fin.close();
 
-	PeerManager::singleton().send(m); // Broadcast the message
+	// Determine if we should notify the network of this change (file creation or file contents change)
+	auto wnts = wntsPath(m.targetFile);
+	size_t hash = ::hash(m.fileContent);
+	bool shouldSend = !exists(wnts);
+	if(!shouldSend) {
+		size_t oldHash;
+		std::ifstream fin(wnts);
+		fin >> oldHash;
+
+		shouldSend = (hash != oldHash);
+	}
+
+	// Broadcast the message and update the saved hash if it was determined that we should send this message
+	if(shouldSend) {
+		PeerManager::singleton().send(m); // Broadcast the message
+		std::ofstream fout(wnts);
+		fout << hash;
+	}
 }
 
 // Callback called whenever a file is deleted

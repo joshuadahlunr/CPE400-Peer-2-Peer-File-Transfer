@@ -73,4 +73,12 @@ inline std::vector<std::filesystem::path> enumerateAllFiles(const std::vector<st
 	return paths;
 }
 
+// Function that converts a string into a size_t
+inline size_t hash(std::string str) {
+	size_t hash = 0;
+	for(char c: str)
+		hash += c;
+	return hash;
+}
+
 #endif // __INCLUDE_EVERYWHERE_HPP__
