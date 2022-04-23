@@ -2,7 +2,7 @@
 	Name: Joshua Dahl, Antonio Massa, and Annette McDonough
 	Date: 4/19/22
 
-	File that provides different messages that are propigated through the network carying paramters for remote procedure calls.
+	File that provides different messages that are propigated through the network carying parameters for remote procedure calls.
 */
 #ifndef __MESSAGES_HPP__
 #define __MESSAGES_HPP__
