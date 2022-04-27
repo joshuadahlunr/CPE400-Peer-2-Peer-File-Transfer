@@ -316,6 +316,9 @@ bool MessageManager::processConnectMessage(const ConnectMessage& m) {
 	PeerManager::singleton().backupPeers = std::move(m.backupPeers);
 	// Save the list of folders the network is managing
 	*folders = std::move(m.managedPaths);
+	// Make sure that any intermediate directories are created
+	for(auto& path: *folders)
+		create_directories(path);
 
 	// Delete managed data in preparation for data syncs
 	auto paths = enumerateAllFiles(*folders);
