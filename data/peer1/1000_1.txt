@@ -1,0 +1,39 @@
+[ZT] Waiting for node to come online...
+[ZT] Waiting to join network...
+Waiting for connections...
+
+Connection IP: >> FD6A:B565:387A:E649:E499:9350:4395:4179 <<
+
+4
+Deserialize Duration: 45μs (0.045ms)
+Route Duration: 79μs (0.079ms)
+1
+Deserialize Duration: 26μs (0.026ms)
+Route Duration: 48μs (0.048ms)
+2
+Deserialize Duration: 26μs (0.026ms)
+Route Duration: 46μs (0.046ms)
+[FD6A:B565:387A:E649:E499:9350:4395:4179] lock "test/1000bytes"
+[FD6A:B565:387A:E649:E499:9350:4395:4179] unlock "test/1000bytes"
+[FD6A:B565:387A:E649:E499:9350:4395:4179] modify "test/1000bytes"
+Route Duration: 53μs (0.053ms)
+Accepted Connection from: FD6A:B565:387A:E649:E499:93D8:E3A3:AE37
+Route Duration: 12μs (0.012ms)
+Route Duration: 5μs (0.005ms)
+4
+Deserialize Duration: 111μs (0.111ms)
+Route Duration: 274μs (0.274ms)
+1
+Deserialize Duration: 48μs (0.048ms)
+Route Duration: 92μs (0.092ms)
+[FD6A:B565:387A:E649:E499:9350:4395:4179] lock "test/1000bytes"
+[FD6A:B565:387A:E649:E499:9350:4395:4179] modify "test/1000bytes"
+4
+Deserialize Duration: 107μs (0.107ms)
+Route Duration: 185μs (0.185ms)
+1
+Deserialize Duration: 38μs (0.038ms)
+Route Duration: 68μs (0.068ms)
+[FD6A:B565:387A:E649:E499:93D8:E3A3:AE37] lock "test/1000bytes"
+[FD6A:B565:387A:E649:E499:93D8:E3A3:AE37] modify "test/1000bytes"
+[ZT] ZeroTier service terminated

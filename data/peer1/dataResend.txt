@@ -1,0 +1,787 @@
+[ZT] Waiting for node to come online...
+[ZT] Waiting to join network...
+
+Connection IP: >> FD6A:B565:387A:E649:E499:9350:4395:4179 <<
+
+Waiting for connections...
+4
+Deserialize Duration: 45μs (0.045ms)
+Route Duration: 100μs (0.1ms)
+1
+Deserialize Duration: 28μs (0.028ms)
+Route Duration: 54μs (0.054ms)
+2
+Deserialize Duration: 25μs (0.025ms)
+Route Duration: 44μs (0.044ms)
+[FD6A:B565:387A:E649:E499:9350:4395:4179] lock "test/test"
+[FD6A:B565:387A:E649:E499:9350:4395:4179] unlock "test/test"
+[FD6A:B565:387A:E649:E499:9350:4395:4179] modify "test/test"
+Route Duration: 116μs (0.116ms)
+Accepted Connection from: FD6A:B565:387A:E649:E499:93D8:E3A3:AE37
+Route Duration: 14μs (0.014ms)
+4
+Deserialize Duration: 67μs (0.067ms)
+Route Duration: 151μs (0.151ms)
+1
+Deserialize Duration: 27μs (0.027ms)
+Route Duration: 64μs (0.064ms)
+[FD6A:B565:387A:E649:E499:93D8:E3A3:AE37] lock "test/test"
+[FD6A:B565:387A:E649:E499:93D8:E3A3:AE37] modify "test/test"
+2
+10
+Deserialize Duration: 17μs (0.017ms)
+Route Duration: 126μs (0.126ms)
+Deserialize Duration: 205μs (0.205ms)
+Route Duration: 276μs (0.276ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 27μs (0.027ms)
+2
+10
+Deserialize Duration: 29μs (0.029ms)
+Route Duration: 124μs (0.124ms)
+Deserialize Duration: 261μs (0.261ms)
+Route Duration: 330μs (0.33ms)
+10
+Deserialize Duration: 19μs (0.019ms)
+Route Duration: 50μs (0.05ms)
+2
+10
+Deserialize Duration: 28μs (0.028ms)
+Route Duration: 144μs (0.144ms)
+Deserialize Duration: 252μs (0.252ms)
+Route Duration: 323μs (0.323ms)
+10
+Deserialize Duration: 18μs (0.018ms)
+Route Duration: 51μs (0.051ms)
+2
+10
+Deserialize Duration: 16μs (0.016ms)
+Route Duration: 160μs (0.16ms)
+Deserialize Duration: 287μs (0.287ms)
+Route Duration: 398μs (0.398ms)
+10
+Deserialize Duration: 8μs (0.008ms)
+Route Duration: 27μs (0.027ms)
+2
+10
+Deserialize Duration: 14μs (0.014ms)
+Route Duration: 114μs (0.114ms)
+Deserialize Duration: 260μs (0.26ms)
+Route Duration: 353μs (0.353ms)
+10
+Deserialize Duration: 9μs (0.009ms)
+Route Duration: 29μs (0.029ms)
+2
+10
+Deserialize Duration: 22μs (0.022ms)
+Route Duration: 98μs (0.098ms)
+Deserialize Duration: 180μs (0.18ms)
+Route Duration: 239μs (0.239ms)
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 43μs (0.043ms)
+2
+10
+Deserialize Duration: 14μs (0.014ms)
+Route Duration: 74μs (0.074ms)
+Deserialize Duration: 156μs (0.156ms)
+Route Duration: 220μs (0.22ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 27μs (0.027ms)
+2
+10
+Deserialize Duration: 17μs (0.017ms)
+Route Duration: 94μs (0.094ms)
+Deserialize Duration: 173μs (0.173ms)
+Route Duration: 269μs (0.269ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 27μs (0.027ms)
+2
+10
+Deserialize Duration: 21μs (0.021ms)
+Route Duration: 103μs (0.103ms)
+Deserialize Duration: 194μs (0.194ms)
+Route Duration: 265μs (0.265ms)
+10
+Deserialize Duration: 12μs (0.012ms)
+Route Duration: 31μs (0.031ms)
+2
+10
+Deserialize Duration: 27μs (0.027ms)
+Route Duration: 139μs (0.139ms)
+Deserialize Duration: 234μs (0.234ms)
+Route Duration: 320μs (0.32ms)
+10
+Deserialize Duration: 18μs (0.018ms)
+Route Duration: 48μs (0.048ms)
+2
+10
+Deserialize Duration: 26μs (0.026ms)
+Route Duration: 157μs (0.157ms)
+Deserialize Duration: 252μs (0.252ms)
+Route Duration: 328μs (0.328ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 27μs (0.027ms)
+2
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 87μs (0.087ms)
+Deserialize Duration: 180μs (0.18ms)
+Route Duration: 268μs (0.268ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 32μs (0.032ms)
+2
+10
+Deserialize Duration: 13μs (0.013ms)
+Route Duration: 1781μs (1.781ms)
+Deserialize Duration: 1899μs (1.899ms)
+Route Duration: 2016μs (2.016ms)
+10
+Deserialize Duration: 12μs (0.012ms)
+Route Duration: 31μs (0.031ms)
+2
+10
+Deserialize Duration: 21μs (0.021ms)
+Route Duration: 108μs (0.108ms)
+Deserialize Duration: 187μs (0.187ms)
+Route Duration: 247μs (0.247ms)
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 39μs (0.039ms)
+2
+10
+Deserialize Duration: 26μs (0.026ms)
+Route Duration: 135μs (0.135ms)
+Deserialize Duration: 255μs (0.255ms)
+Route Duration: 327μs (0.327ms)
+10
+Deserialize Duration: 20μs (0.02ms)
+Route Duration: 53μs (0.053ms)
+2
+10
+Deserialize Duration: 29μs (0.029ms)
+Route Duration: 143μs (0.143ms)
+Deserialize Duration: 247μs (0.247ms)
+Route Duration: 367μs (0.367ms)
+10
+Deserialize Duration: 18μs (0.018ms)
+Route Duration: 50μs (0.05ms)
+2
+10
+Deserialize Duration: 17μs (0.017ms)
+Route Duration: 115μs (0.115ms)
+Deserialize Duration: 196μs (0.196ms)
+Route Duration: 266μs (0.266ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 31μs (0.031ms)
+2
+10
+Deserialize Duration: 11μs (0.011ms)
+Route Duration: 85μs (0.085ms)
+Deserialize Duration: 138μs (0.138ms)
+Route Duration: 180μs (0.18ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 31μs (0.031ms)
+2
+10
+Deserialize Duration: 13μs (0.013ms)
+Route Duration: 87μs (0.087ms)
+Deserialize Duration: 151μs (0.151ms)
+Route Duration: 197μs (0.197ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 24μs (0.024ms)
+2
+10
+Deserialize Duration: 29μs (0.029ms)
+Route Duration: 167μs (0.167ms)
+Deserialize Duration: 266μs (0.266ms)
+Route Duration: 349μs (0.349ms)
+10
+Deserialize Duration: 20μs (0.02ms)
+Route Duration: 46μs (0.046ms)
+2
+10
+Deserialize Duration: 27μs (0.027ms)
+Route Duration: 149μs (0.149ms)
+Deserialize Duration: 253μs (0.253ms)
+Route Duration: 340μs (0.34ms)
+10
+Deserialize Duration: 18μs (0.018ms)
+Route Duration: 76μs (0.076ms)
+2
+10
+Deserialize Duration: 23μs (0.023ms)
+Route Duration: 116μs (0.116ms)
+Deserialize Duration: 195μs (0.195ms)
+Route Duration: 252μs (0.252ms)
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 38μs (0.038ms)
+2
+10
+Deserialize Duration: 20μs (0.02ms)
+Route Duration: 111μs (0.111ms)
+Deserialize Duration: 186μs (0.186ms)
+Route Duration: 247μs (0.247ms)
+10
+Deserialize Duration: 16μs (0.016ms)
+Route Duration: 40μs (0.04ms)
+2
+10
+Deserialize Duration: 21μs (0.021ms)
+Route Duration: 106μs (0.106ms)
+Deserialize Duration: 189μs (0.189ms)
+Route Duration: 245μs (0.245ms)
+10
+Deserialize Duration: 16μs (0.016ms)
+Route Duration: 39μs (0.039ms)
+2
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 72μs (0.072ms)
+Deserialize Duration: 129μs (0.129ms)
+Route Duration: 174μs (0.174ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 27μs (0.027ms)
+2
+10
+Deserialize Duration: 23μs (0.023ms)
+Route Duration: 115μs (0.115ms)
+Deserialize Duration: 211μs (0.211ms)
+Route Duration: 289μs (0.289ms)
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 43μs (0.043ms)
+2
+10
+Deserialize Duration: 64μs (0.064ms)
+Route Duration: 160μs (0.16ms)
+Deserialize Duration: 257μs (0.257ms)
+Route Duration: 324μs (0.324ms)
+10
+Deserialize Duration: 27μs (0.027ms)
+Route Duration: 67μs (0.067ms)
+2
+10
+Deserialize Duration: 21μs (0.021ms)
+Route Duration: 106μs (0.106ms)
+Deserialize Duration: 180μs (0.18ms)
+Route Duration: 233μs (0.233ms)
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 44μs (0.044ms)
+2
+10
+Deserialize Duration: 14μs (0.014ms)
+Route Duration: 119μs (0.119ms)
+Deserialize Duration: 195μs (0.195ms)
+Route Duration: 271μs (0.271ms)
+10
+Deserialize Duration: 13μs (0.013ms)
+Route Duration: 43μs (0.043ms)
+2
+10
+Deserialize Duration: 23μs (0.023ms)
+Route Duration: 110μs (0.11ms)
+Deserialize Duration: 223μs (0.223ms)
+Route Duration: 285μs (0.285ms)
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 49μs (0.049ms)
+2
+10
+Deserialize Duration: 24μs (0.024ms)
+Route Duration: 122μs (0.122ms)
+Deserialize Duration: 217μs (0.217ms)
+Route Duration: 287μs (0.287ms)
+10
+Deserialize Duration: 19μs (0.019ms)
+Route Duration: 51μs (0.051ms)
+2
+10
+Deserialize Duration: 16μs (0.016ms)
+Route Duration: 1610μs (1.61ms)
+Deserialize Duration: 1691μs (1.691ms)
+Route Duration: 1758μs (1.758ms)
+10
+Deserialize Duration: 9μs (0.009ms)
+Route Duration: 25μs (0.025ms)
+2
+10
+Deserialize Duration: 16μs (0.016ms)
+Route Duration: 120μs (0.12ms)
+Deserialize Duration: 241μs (0.241ms)
+Route Duration: 358μs (0.358ms)
+10
+Deserialize Duration: 7μs (0.007ms)
+Route Duration: 21μs (0.021ms)
+2
+10
+Deserialize Duration: 27μs (0.027ms)
+Route Duration: 140μs (0.14ms)
+Deserialize Duration: 242μs (0.242ms)
+Route Duration: 311μs (0.311ms)
+10
+Deserialize Duration: 19μs (0.019ms)
+Route Duration: 52μs (0.052ms)
+2
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 78μs (0.078ms)
+Deserialize Duration: 131μs (0.131ms)
+Route Duration: 173μs (0.173ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 29μs (0.029ms)
+2
+10
+Deserialize Duration: 12μs (0.012ms)
+Route Duration: 63μs (0.063ms)
+Deserialize Duration: 116μs (0.116ms)
+Route Duration: 158μs (0.158ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 26μs (0.026ms)
+2
+10
+Deserialize Duration: 35μs (0.035ms)
+Route Duration: 216μs (0.216ms)
+Deserialize Duration: 353μs (0.353ms)
+Route Duration: 468μs (0.468ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 32μs (0.032ms)
+2
+10
+Deserialize Duration: 17μs (0.017ms)
+Route Duration: 78μs (0.078ms)
+Deserialize Duration: 128μs (0.128ms)
+Route Duration: 171μs (0.171ms)
+10
+Deserialize Duration: 9μs (0.009ms)
+Route Duration: 25μs (0.025ms)
+2
+10
+Deserialize Duration: 25μs (0.025ms)
+Route Duration: 125μs (0.125ms)
+Deserialize Duration: 214μs (0.214ms)
+Route Duration: 284μs (0.284ms)
+10
+Deserialize Duration: 20μs (0.02ms)
+Route Duration: 53μs (0.053ms)
+2
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 94μs (0.094ms)
+Deserialize Duration: 167μs (0.167ms)
+Route Duration: 222μs (0.222ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 26μs (0.026ms)
+2
+10
+Deserialize Duration: 25μs (0.025ms)
+Route Duration: 133μs (0.133ms)
+Deserialize Duration: 240μs (0.24ms)
+Route Duration: 320μs (0.32ms)
+10
+Deserialize Duration: 19μs (0.019ms)
+Route Duration: 51μs (0.051ms)
+2
+10
+Deserialize Duration: 25μs (0.025ms)
+Route Duration: 1615μs (1.615ms)
+Deserialize Duration: 1713μs (1.713ms)
+Route Duration: 1789μs (1.789ms)
+10
+Deserialize Duration: 17μs (0.017ms)
+Route Duration: 46μs (0.046ms)
+2
+10
+Deserialize Duration: 25μs (0.025ms)
+Route Duration: 122μs (0.122ms)
+Deserialize Duration: 216μs (0.216ms)
+Route Duration: 286μs (0.286ms)
+10
+Deserialize Duration: 21μs (0.021ms)
+Route Duration: 101μs (0.101ms)
+2
+10
+Deserialize Duration: 23μs (0.023ms)
+Route Duration: 110μs (0.11ms)
+Deserialize Duration: 184μs (0.184ms)
+Route Duration: 282μs (0.282ms)
+10
+Deserialize Duration: 17μs (0.017ms)
+Route Duration: 41μs (0.041ms)
+2
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 78μs (0.078ms)
+Deserialize Duration: 139μs (0.139ms)
+Route Duration: 178μs (0.178ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 29μs (0.029ms)
+2
+10
+Deserialize Duration: 28μs (0.028ms)
+Route Duration: 138μs (0.138ms)
+Deserialize Duration: 249μs (0.249ms)
+Route Duration: 324μs (0.324ms)
+10
+Deserialize Duration: 19μs (0.019ms)
+Route Duration: 51μs (0.051ms)
+2
+10
+Deserialize Duration: 27μs (0.027ms)
+Route Duration: 130μs (0.13ms)
+Deserialize Duration: 228μs (0.228ms)
+Route Duration: 434μs (0.434ms)
+10
+Deserialize Duration: 72μs (0.072ms)
+Route Duration: 147μs (0.147ms)
+2
+10
+Deserialize Duration: 21μs (0.021ms)
+Route Duration: 105μs (0.105ms)
+Deserialize Duration: 184μs (0.184ms)
+Route Duration: 244μs (0.244ms)
+10
+Deserialize Duration: 18μs (0.018ms)
+Route Duration: 40μs (0.04ms)
+2
+10
+Deserialize Duration: 29μs (0.029ms)
+Route Duration: 176μs (0.176ms)
+Deserialize Duration: 309μs (0.309ms)
+Route Duration: 463μs (0.463ms)
+10
+Deserialize Duration: 19μs (0.019ms)
+Route Duration: 56μs (0.056ms)
+2
+10
+Deserialize Duration: 26μs (0.026ms)
+Route Duration: 130μs (0.13ms)
+Deserialize Duration: 239μs (0.239ms)
+Route Duration: 309μs (0.309ms)
+10
+Deserialize Duration: 16μs (0.016ms)
+Route Duration: 48μs (0.048ms)
+2
+10
+Deserialize Duration: 22μs (0.022ms)
+Route Duration: 136μs (0.136ms)
+Deserialize Duration: 216μs (0.216ms)
+Route Duration: 269μs (0.269ms)
+10
+Deserialize Duration: 17μs (0.017ms)
+Route Duration: 44μs (0.044ms)
+2
+10
+Deserialize Duration: 22μs (0.022ms)
+Route Duration: 265μs (0.265ms)
+Deserialize Duration: 350μs (0.35ms)
+Route Duration: 429μs (0.429ms)
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 38μs (0.038ms)
+2
+10
+Deserialize Duration: 27μs (0.027ms)
+Route Duration: 133μs (0.133ms)
+Deserialize Duration: 234μs (0.234ms)
+Route Duration: 301μs (0.301ms)
+10
+Deserialize Duration: 54μs (0.054ms)
+Route Duration: 94μs (0.094ms)
+2
+10
+Deserialize Duration: 25μs (0.025ms)
+Route Duration: 125μs (0.125ms)
+Deserialize Duration: 225μs (0.225ms)
+Route Duration: 298μs (0.298ms)
+10
+Deserialize Duration: 18μs (0.018ms)
+Route Duration: 47μs (0.047ms)
+2
+10
+Deserialize Duration: 22μs (0.022ms)
+Route Duration: 103μs (0.103ms)
+Deserialize Duration: 182μs (0.182ms)
+Route Duration: 235μs (0.235ms)
+10
+Deserialize Duration: 16μs (0.016ms)
+Route Duration: 46μs (0.046ms)
+2
+10
+Deserialize Duration: 35μs (0.035ms)
+Route Duration: 147μs (0.147ms)
+Deserialize Duration: 247μs (0.247ms)
+Route Duration: 579μs (0.579ms)
+10
+Deserialize Duration: 22μs (0.022ms)
+Route Duration: 91μs (0.091ms)
+2
+10
+Deserialize Duration: 17μs (0.017ms)
+Route Duration: 86μs (0.086ms)
+Deserialize Duration: 151μs (0.151ms)
+Route Duration: 208μs (0.208ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 26μs (0.026ms)
+2
+10
+Deserialize Duration: 29μs (0.029ms)
+Route Duration: 139μs (0.139ms)
+Deserialize Duration: 268μs (0.268ms)
+Route Duration: 344μs (0.344ms)
+10
+Deserialize Duration: 21μs (0.021ms)
+Route Duration: 53μs (0.053ms)
+2
+10
+Deserialize Duration: 24μs (0.024ms)
+Route Duration: 132μs (0.132ms)
+Deserialize Duration: 227μs (0.227ms)
+Route Duration: 339μs (0.339ms)
+10
+Deserialize Duration: 18μs (0.018ms)
+Route Duration: 50μs (0.05ms)
+2
+10
+Deserialize Duration: 22μs (0.022ms)
+Route Duration: 101μs (0.101ms)
+Deserialize Duration: 177μs (0.177ms)
+Route Duration: 235μs (0.235ms)
+10
+Deserialize Duration: 13μs (0.013ms)
+Route Duration: 38μs (0.038ms)
+2
+10
+Deserialize Duration: 13μs (0.013ms)
+Route Duration: 73μs (0.073ms)
+Deserialize Duration: 137μs (0.137ms)
+Route Duration: 185μs (0.185ms)
+10
+Deserialize Duration: 9μs (0.009ms)
+Route Duration: 26μs (0.026ms)
+2
+10
+Deserialize Duration: 14μs (0.014ms)
+Route Duration: 1746μs (1.746ms)
+Deserialize Duration: 1831μs (1.831ms)
+Route Duration: 1895μs (1.895ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 30μs (0.03ms)
+2
+10
+Deserialize Duration: 23μs (0.023ms)
+Route Duration: 104μs (0.104ms)
+Deserialize Duration: 183μs (0.183ms)
+Route Duration: 238μs (0.238ms)
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 37μs (0.037ms)
+2
+10
+Deserialize Duration: 11μs (0.011ms)
+Route Duration: 85μs (0.085ms)
+Deserialize Duration: 136μs (0.136ms)
+Route Duration: 175μs (0.175ms)
+10
+Deserialize Duration: 7μs (0.007ms)
+Route Duration: 21μs (0.021ms)
+2
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 97μs (0.097ms)
+Deserialize Duration: 173μs (0.173ms)
+Route Duration: 225μs (0.225ms)
+10
+Deserialize Duration: 13μs (0.013ms)
+Route Duration: 42μs (0.042ms)
+2
+10
+Deserialize Duration: 12μs (0.012ms)
+Route Duration: 56μs (0.056ms)
+Deserialize Duration: 115μs (0.115ms)
+Route Duration: 161μs (0.161ms)
+10
+Deserialize Duration: 18μs (0.018ms)
+Route Duration: 50μs (0.05ms)
+2
+10
+Deserialize Duration: 21μs (0.021ms)
+Route Duration: 91μs (0.091ms)
+Deserialize Duration: 172μs (0.172ms)
+Route Duration: 228μs (0.228ms)
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 40μs (0.04ms)
+2
+10
+Deserialize Duration: 41μs (0.041ms)
+Route Duration: 115μs (0.115ms)
+Deserialize Duration: 194μs (0.194ms)
+Route Duration: 248μs (0.248ms)
+10
+Deserialize Duration: 14μs (0.014ms)
+Route Duration: 42μs (0.042ms)
+2
+10
+Deserialize Duration: 14μs (0.014ms)
+Route Duration: 78μs (0.078ms)
+Deserialize Duration: 141μs (0.141ms)
+Route Duration: 184μs (0.184ms)
+10
+Deserialize Duration: 8μs (0.008ms)
+Route Duration: 23μs (0.023ms)
+2
+10
+Deserialize Duration: 14μs (0.014ms)
+Route Duration: 98μs (0.098ms)
+Deserialize Duration: 163μs (0.163ms)
+Route Duration: 213μs (0.213ms)
+10
+Deserialize Duration: 9μs (0.009ms)
+Route Duration: 35μs (0.035ms)
+2
+10
+Deserialize Duration: 14μs (0.014ms)
+Route Duration: 149μs (0.149ms)
+Deserialize Duration: 254μs (0.254ms)
+Route Duration: 317μs (0.317ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 28μs (0.028ms)
+2
+10
+Deserialize Duration: 27μs (0.027ms)
+Route Duration: 1651μs (1.651ms)
+Deserialize Duration: 1703μs (1.703ms)
+Route Duration: 1751μs (1.751ms)
+10
+Deserialize Duration: 28μs (0.028ms)
+Route Duration: 52μs (0.052ms)
+2
+10
+Deserialize Duration: 13μs (0.013ms)
+Route Duration: 75μs (0.075ms)
+Deserialize Duration: 142μs (0.142ms)
+Route Duration: 193μs (0.193ms)
+10
+Deserialize Duration: 8μs (0.008ms)
+Route Duration: 24μs (0.024ms)
+2
+10
+Deserialize Duration: 27μs (0.027ms)
+Route Duration: 136μs (0.136ms)
+Deserialize Duration: 241μs (0.241ms)
+Route Duration: 320μs (0.32ms)
+10
+Deserialize Duration: 19μs (0.019ms)
+Route Duration: 52μs (0.052ms)
+2
+10
+Deserialize Duration: 17μs (0.017ms)
+Route Duration: 90μs (0.09ms)
+Deserialize Duration: 146μs (0.146ms)
+Route Duration: 194μs (0.194ms)
+10
+Deserialize Duration: 8μs (0.008ms)
+Route Duration: 24μs (0.024ms)
+2
+10
+Deserialize Duration: 14μs (0.014ms)
+Route Duration: 85μs (0.085ms)
+Deserialize Duration: 151μs (0.151ms)
+Route Duration: 205μs (0.205ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 30μs (0.03ms)
+2
+10
+Deserialize Duration: 14μs (0.014ms)
+Route Duration: 86μs (0.086ms)
+Deserialize Duration: 159μs (0.159ms)
+Route Duration: 217μs (0.217ms)
+10
+Deserialize Duration: 11μs (0.011ms)
+Route Duration: 33μs (0.033ms)
+2
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 77μs (0.077ms)
+Deserialize Duration: 130μs (0.13ms)
+Route Duration: 176μs (0.176ms)
+10
+Deserialize Duration: 9μs (0.009ms)
+Route Duration: 25μs (0.025ms)
+2
+10
+Deserialize Duration: 14μs (0.014ms)
+Route Duration: 92μs (0.092ms)
+Deserialize Duration: 198μs (0.198ms)
+Route Duration: 256μs (0.256ms)
+10
+Deserialize Duration: 10μs (0.01ms)
+Route Duration: 25μs (0.025ms)
+2
+10
+Deserialize Duration: 27μs (0.027ms)
+Route Duration: 128μs (0.128ms)
+Deserialize Duration: 230μs (0.23ms)
+Route Duration: 302μs (0.302ms)
+10
+Deserialize Duration: 18μs (0.018ms)
+Route Duration: 106μs (0.106ms)
+2
+10
+Deserialize Duration: 25μs (0.025ms)
+Route Duration: 124μs (0.124ms)
+Deserialize Duration: 226μs (0.226ms)
+Route Duration: 301μs (0.301ms)
+10
+Deserialize Duration: 19μs (0.019ms)
+Route Duration: 51μs (0.051ms)
+2
+10
+Deserialize Duration: 25μs (0.025ms)
+Route Duration: 129μs (0.129ms)
+Deserialize Duration: 226μs (0.226ms)
+Route Duration: 302μs (0.302ms)
+10
+Deserialize Duration: 20μs (0.02ms)
+Route Duration: 50μs (0.05ms)
+2
+10
+Deserialize Duration: 22μs (0.022ms)
+Route Duration: 97μs (0.097ms)
+Deserialize Duration: 173μs (0.173ms)
+Route Duration: 252μs (0.252ms)
+10
+Deserialize Duration: 15μs (0.015ms)
+Route Duration: 44μs (0.044ms)
+8
+Deserialize Duration: 27μs (0.027ms)
+Route Duration: 333μs (0.333ms)
+[FD6A:B565:387A:E649:E499:93D8:E3A3:AE37] disconnect message
+2
+10
+Deserialize Duration: 19μs (0.019ms)
+Route Duration: 53μs (0.053ms)
+Deserialize Duration: 116μs (0.116ms)
+Route Duration: 146μs (0.146ms)
+[ZT] ZeroTier service terminated

@@ -1,0 +1,46 @@
+[ZT] Waiting for node to come online...
+[ZT] Waiting to join network...
+
+Connection IP: >> FD6A:B565:387A:E649:E499:9350:4395:4179 <<
+
+Waiting for connections...
+4
+10
+Deserialize Duration: 27μs (0.027ms)
+Route Duration: 70μs (0.07ms)
+Deserialize Duration: 139μs (0.139ms)
+Route Duration: 177μs (0.177ms)
+1
+10
+Deserialize Duration: 13μs (0.013ms)
+Route Duration: 35μs (0.035ms)
+Deserialize Duration: 75μs (0.075ms)
+Route Duration: 99μs (0.099ms)
+2
+10
+Deserialize Duration: 11μs (0.011ms)
+Route Duration: 31μs (0.031ms)
+Deserialize Duration: 63μs (0.063ms)
+Route Duration: 80μs (0.08ms)
+Route Duration: 89μs (0.089ms)
+Accepted Connection from: FD6A:B565:387A:E649:E499:93D8:E3A3:AE37
+Route Duration: 22μs (0.022ms)
+4
+Deserialize Duration: 93μs (0.093ms)
+Route Duration: 181μs (0.181ms)
+1
+Deserialize Duration: 41μs (0.041ms)
+Route Duration: 74μs (0.074ms)
+[FD6A:B565:387A:E649:E499:93D8:E3A3:AE37] lock "test/15bytes"
+[FD6A:B565:387A:E649:E499:93D8:E3A3:AE37] modify "test/15bytes"
+8
+Deserialize Duration: 23μs (0.023ms)
+Route Duration: 104μs (0.104ms)
+[FD6A:B565:387A:E649:E499:93D8:E3A3:AE37] disconnect message
+2
+10
+Deserialize Duration: 20μs (0.02ms)
+Route Duration: 53μs (0.053ms)
+Deserialize Duration: 120μs (0.12ms)
+Route Duration: 155μs (0.155ms)
+[ZT] ZeroTier service terminated

@@ -1,0 +1,28 @@
+[ZT] Waiting for node to come online...
+[ZT] Waiting to join network...
+
+Connection IP: >> FD6A:B565:387A:E649:E499:93D8:E3A3:AE37 <<
+
+Attempting to connect to FD6A:B565:387A:E649:E499:9350:4395:4179...
+Waiting for connections...
+Connection successful!
+7
+Deserialize Duration: 87μs (0.087ms)
+Route Duration: 208μs (0.208ms)
+5
+Deserialize Duration: 527μs (0.527ms)
+Route Duration: 565μs (0.565ms)
+[FD6A:B565:387A:E649:E499:9350:4395:4179] connect message
+4
+Deserialize Duration: 88μs (0.088ms)
+Route Duration: 292μs (0.292ms)
+1
+Deserialize Duration: 70μs (0.07ms)
+Route Duration: 138μs (0.138ms)
+[FD6A:B565:387A:E649:E499:93D8:E3A3:AE37] lock "test/test"
+[FD6A:B565:387A:E649:E499:93D8:E3A3:AE37] modify "test/test"
+2
+Deserialize Duration: 99μs (0.099ms)
+Route Duration: 327μs (0.327ms)
+[FD6A:B565:387A:E649:E499:93D8:E3A3:AE37] unlock "test/test"
+[ZT] ZeroTier service terminated

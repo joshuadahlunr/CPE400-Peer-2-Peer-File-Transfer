@@ -1,0 +1,27 @@
+[ZT] Waiting for node to come online...
+[ZT] Waiting to join network...
+Waiting for connections...
+
+Connection IP: >> FD6A:B565:387A:E649:E499:93D8:E3A3:AE37 <<
+
+Attempting to connect to FD6A:B565:387A:E649:E499:9350:4395:4179...
+Connection successful!
+7
+Deserialize Duration: 81μs (0.081ms)
+Route Duration: 191μs (0.191ms)
+5
+Deserialize Duration: 1075μs (1.075ms)
+Route Duration: 1135μs (1.135ms)
+[FD6A:B565:387A:E649:E499:9350:4395:4179] connect message
+4
+Deserialize Duration: 483μs (0.483ms)
+Route Duration: 917μs (0.917ms)
+1
+Deserialize Duration: 68μs (0.068ms)
+Route Duration: 128μs (0.128ms)
+[FD6A:B565:387A:E649:E499:93D8:E3A3:AE37] lock "test/10000bytes"
+[FD6A:B565:387A:E649:E499:93D8:E3A3:AE37] modify "test/10000bytes"
+2
+Deserialize Duration: 82μs (0.082ms)
+Route Duration: 293μs (0.293ms)
+[FD6A:B565:387A:E649:E499:93D8:E3A3:AE37] unlock "test/10000bytes"
