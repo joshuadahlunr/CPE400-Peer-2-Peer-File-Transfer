@@ -49,4 +49,7 @@ Or you can copy and paste this code block in the terminal from PA10
   **to establish a peer connection**
 
     ./wnts -c *gateway node IPv6 address here*
+    
+    
+    
 
