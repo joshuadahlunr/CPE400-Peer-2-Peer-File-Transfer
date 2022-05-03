@@ -18,7 +18,9 @@ We implemented a file sharing network using a system of peer-to-peer connections
 
 ## Build
 
-From a linux command console
+**NOTE: This project has been built using c++17, thus a compiler capable of supporting that version is required. Any modern linux compiler should be supported. The project hasn't been tested on windows but it should (theoretically) work fine.**
+
+From a command console
 
     git clone https://github.com/joshuadahlunr/CPE400-Peer-2-Peer-File-Transfer
     git submodule init
@@ -27,11 +29,11 @@ From a linux command console
 Create a build directory
 Move to that build directory
 
-    Run cmake ..
-    Run make
-    Run ./wnts
+    cmake ..
+    make
+    ./wnts
 
-Or you can copy and paste this code block in the terminal from PA10
+Or you can copy and paste this code block in a terminal.
 
     mkdir build
     cd build
@@ -46,9 +48,9 @@ Or you can copy and paste this code block in the terminal from PA10
     
     ./wnts -f *file name here*
 
-  **to establish a peer connection**
+  **to establish a peer connection on a seperate device**
 
-    ./wnts -c *gateway node IPv6 address here*
+    ./wnts -c *gateway node IPv6 address here (will be displayed on the first peer)*
     
     
     
