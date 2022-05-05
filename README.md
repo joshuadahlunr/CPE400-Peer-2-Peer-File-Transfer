@@ -43,6 +43,8 @@ Or you can copy and paste this code block in a terminal.
 
 ### Controls:
 
+  **NOTE: A demo of the program running (demo.mp4) is included.**
+
   **Once program is built run with**
   **to establish the first peer node**
     
@@ -56,3 +58,4 @@ Or you can copy and paste this code block in a terminal.
   **To end a peer conection on both devices**
 
    ctrl + c 
+
