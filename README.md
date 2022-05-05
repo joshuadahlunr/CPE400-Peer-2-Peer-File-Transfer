@@ -53,5 +53,6 @@ Or you can copy and paste this code block in a terminal.
     ./wnts -c *gateway node IPv6 address here (will be displayed on the first peer)*
     
     
-    
+  **To end a peer conection on both devices**
 
+   ctrl + c 
